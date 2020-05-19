@@ -9,9 +9,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
-os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '3'
-
 import cfg
 import models_search
 import datasets
