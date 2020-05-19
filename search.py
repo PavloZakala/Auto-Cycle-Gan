@@ -8,6 +8,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'
+os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '3'
+
 import cfg
 import models_search
 import datasets
@@ -17,7 +21,6 @@ from utils.inception_score import _init_inception
 from utils.fid_score import create_inception_graph, check_or_download_inception
 
 import torch
-import os
 import torch.nn as nn
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
