@@ -1,4 +1,6 @@
-/.idea/
 /__pycache__/
+/.idea/
 /logs/
 /data/
+/utils/__pycache__/*
+/models_search/__pycache__/*

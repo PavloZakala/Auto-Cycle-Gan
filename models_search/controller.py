@@ -29,8 +29,10 @@ class Controller(nn.Module):
         self.encoder = nn.Embedding(sum(self.tokens), self.hid_size)
         self.decoders = nn.ModuleList([nn.Linear(self.hid_size, token) for token in self.tokens])
 
-    def initHidden(self, batch_size):
-        return torch.zeros(batch_size, self.hid_size, requires_grad=False).cuda()
+    def initHidden(self, batch_size, cpu):
+        if not cpu:
+            return torch.zeros(batch_size, self.hid_size, requires_grad=False).cuda()
+        return torch.zeros(batch_size, self.hid_size, requires_grad=False)
 
     def forward(self, x, hidden, index):
         if index == 0:
@@ -44,8 +46,8 @@ class Controller(nn.Module):
 
         return logit, (hx, cx)
 
-    def sample(self, batch_size, with_hidden=False, prev_hiddens=None, prev_archs=None):
-        x = self.initHidden(batch_size)
+    def sample(self, batch_size, with_hidden=False, prev_hiddens=None, prev_archs=None, cpu=False):
+        x = self.initHidden(batch_size, cpu)
 
         if prev_hiddens:
             assert prev_archs
@@ -64,7 +66,7 @@ class Controller(nn.Module):
             selected_archs = torch.cat(selected_archs, 0)
             hidden = (torch.cat(selected_hxs, 0), torch.cat(selected_cxs, 0))
         else:
-            hidden = (self.initHidden(batch_size), self.initHidden(batch_size))
+            hidden = (self.initHidden(batch_size, cpu), self.initHidden(batch_size, cpu))
         entropies = []
         actions = []
         selected_log_probs = []

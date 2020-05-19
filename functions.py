@@ -22,8 +22,18 @@ from utils.inception_score import get_inception_score
 logger = logging.getLogger(__name__)
 
 
-def train_shared(args, gen_net: nn.Module, dis_net: nn.Module, g_loss_history, d_loss_history, controller, gen_optimizer
-                 , dis_optimizer, train_loader, prev_hiddens=None, prev_archs=None):
+def train_shared(args,
+                 gen_net: nn.Module,
+                 dis_net: nn.Module,
+                 g_loss_history,
+                 d_loss_history,
+                 controller,
+                 gen_optimizer,
+                 dis_optimizer,
+                 train_loader,
+                 prev_hiddens=None,
+                 prev_archs=None):
+
     dynamic_reset = False
     logger.info('=> train shared GAN...')
     step = 0
@@ -39,14 +49,20 @@ def train_shared(args, gen_net: nn.Module, dis_net: nn.Module, g_loss_history, d
         for iter_idx, (imgs, _) in enumerate(train_loader):
 
             # sample an arch
-            arch = controller.sample(1, prev_hiddens=prev_hiddens, prev_archs=prev_archs)[0][0]
+            arch = controller.sample(1, prev_hiddens=prev_hiddens, prev_archs=prev_archs, cpu=args.cpu)[0][0]
             gen_net.set_arch(arch, controller.cur_stage)
             dis_net.cur_stage = controller.cur_stage
             # Adversarial ground truths
-            real_imgs = imgs.type(torch.cuda.FloatTensor)
+            if args.cpu:
+                real_imgs = imgs.type(torch.FloatTensor)
+            else:
+                real_imgs = imgs.type(torch.cuda.FloatTensor)
 
             # Sample noise as generator input
-            z = torch.cuda.FloatTensor(np.random.normal(0, 1, (imgs.shape[0], args.latent_dim)))
+            if args.cpu:
+                z = torch.FloatTensor(np.random.normal(0, 1, (imgs.shape[0], args.latent_dim)))
+            else:
+                z = torch.cuda.FloatTensor(np.random.normal(0, 1, (imgs.shape[0], args.latent_dim)))
 
             # ---------------------
             #  Train Discriminator
@@ -74,8 +90,10 @@ def train_shared(args, gen_net: nn.Module, dis_net: nn.Module, g_loss_history, d
             # -----------------
             if step % args.n_critic == 0:
                 gen_optimizer.zero_grad()
-
-                gen_z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.gen_batch_size, args.latent_dim)))
+                if args.cpu:
+                    gen_z = torch.FloatTensor(np.random.normal(0, 1, (args.gen_batch_size, args.latent_dim)))
+                else:
+                    gen_z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.gen_batch_size, args.latent_dim)))
                 gen_imgs = gen_net(gen_z)
                 fake_validity = dis_net(gen_imgs)
 
@@ -123,10 +141,17 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
         global_steps = writer_dict['train_global_steps']
 
         # Adversarial ground truths
-        real_imgs = imgs.type(torch.cuda.FloatTensor)
+        if args.cpu:
+            real_imgs = imgs.type(torch.FloatTensor)
+        else:
+            real_imgs = imgs.type(torch.cuda.FloatTensor)
 
         # Sample noise as generator input
-        z = torch.cuda.FloatTensor(np.random.normal(0, 1, (imgs.shape[0], args.latent_dim)))
+
+        if args.cpu:
+            z = torch.FloatTensor(np.random.normal(0, 1, (imgs.shape[0], args.latent_dim)))
+        else:
+            z = torch.cuda.FloatTensor(np.random.normal(0, 1, (imgs.shape[0], args.latent_dim)))
 
         # ---------------------
         #  Train Discriminator
@@ -153,7 +178,10 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
         if global_steps % args.n_critic == 0:
             gen_optimizer.zero_grad()
 
-            gen_z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.gen_batch_size, args.latent_dim)))
+            if args.cpu:
+                gen_z = torch.FloatTensor(np.random.normal(0, 1, (args.gen_batch_size, args.latent_dim)))
+            else:
+                gen_z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.gen_batch_size, args.latent_dim)))
             gen_imgs = gen_net(gen_z)
             fake_validity = dis_net(gen_imgs)
 
@@ -201,7 +229,7 @@ def train_controller(args, controller, ctrl_optimizer, gen_net, prev_hiddens, pr
     for step in range(args.ctrl_step):
         controller_step = writer_dict['controller_steps']
         archs, selected_log_probs, entropies = controller.sample(args.ctrl_sample_batch, prev_hiddens=prev_hiddens,
-                                                                 prev_archs=prev_archs)
+                                                                 prev_archs=prev_archs, cpu=args.cpu)
         cur_batch_rewards = []
         for arch in archs:
             logger.info(f'arch: {arch}')
@@ -209,7 +237,10 @@ def train_controller(args, controller, ctrl_optimizer, gen_net, prev_hiddens, pr
             is_score = get_is(args, gen_net, args.rl_num_eval_img)
             logger.info(f'get Inception score of {is_score}')
             cur_batch_rewards.append(is_score)
-        cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False).cuda()
+        if args.cpu:
+            cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False)
+        else:
+            cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False).cuda()
         cur_batch_rewards = cur_batch_rewards.unsqueeze(-1) + args.entropy_coeff * entropies  # bs * 1
         if baseline is None:
             baseline = cur_batch_rewards
@@ -253,7 +284,10 @@ def get_is(args, gen_net: nn.Module, num_img):
     eval_iter = num_img // args.eval_batch_size
     img_list = list()
     for _ in range(eval_iter):
-        z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
+        if args.cpu:
+            z = torch.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
+        else:
+            z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
 
         # Generate a batch of images
         gen_imgs = gen_net(z).mul_(127.5).add_(127.5).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu',
@@ -285,7 +319,10 @@ def validate(args, fixed_z, fid_stat, gen_net: nn.Module, writer_dict, clean_dir
     eval_iter = args.num_eval_imgs // args.eval_batch_size
     img_list = list()
     for iter_idx in tqdm(range(eval_iter), desc='sample images'):
-        z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
+        if args.cpu:
+            z = torch.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
+        else:
+            z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
 
         # Generate a batch of images
         gen_imgs = gen_net(z).mul_(127.5).add_(127.5).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu',

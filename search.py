@@ -22,8 +22,8 @@ import torch.nn as nn
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
-torch.backends.cudnn.enabled = True
-torch.backends.cudnn.benchmark = True
+torch.backends.cudnn.enabled = False
+torch.backends.cudnn.benchmark = False
 
 
 class GrowCtrler(object):
@@ -153,6 +153,7 @@ def main():
     d_loss_history = RunningStats(args.dynamic_reset_window)
 
     # train loop
+
     for search_iter in tqdm(range(int(start_search_iter), int(args.max_search_iter)), desc='search progress'):
         logger.info(f"<start search iteration {search_iter}>")
         if search_iter == args.grow_step1 or search_iter == args.grow_step2:
