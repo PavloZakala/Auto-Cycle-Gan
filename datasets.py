@@ -46,9 +46,9 @@ class ImageDataset(object):
         else:
 
             tr = Dt(root=args.data_path, train=True, transform=transform, download=True)
-            tr.data = tr.data[:100]
+            tr.data = tr.data[:min(args.data_size, len(tr.data))]
             vl = Dt(root=args.data_path, train=False, transform=transform)
-            vl.data = vl.data[:100]
+            vl.data = vl.data[:min(args.data_size, len(vl.data))]
 
             self.train = torch.utils.data.DataLoader(
                 tr, batch_size=args.dis_batch_size, shuffle=True,

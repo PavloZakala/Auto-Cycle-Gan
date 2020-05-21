@@ -23,6 +23,11 @@ def parse_args():
         type=str,
     )
     parser.add_argument(
+        '--data_size',
+        type=int,
+        default=500000,
+        help='number of epochs of training')
+    parser.add_argument(
         '--max_epoch',
         type=int,
         default=200,
