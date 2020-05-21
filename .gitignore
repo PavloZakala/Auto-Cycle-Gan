@@ -2,5 +2,6 @@
 /.idea/
 /logs/
 /data/
-/utils/__pycache__/*
-/models_search/__pycache__/*
+/__pycache__/
+/utils/__pycache__/
+*.pyc

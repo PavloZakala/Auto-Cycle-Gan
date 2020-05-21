@@ -19,6 +19,10 @@ def str2bool(v):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "-f",
+        type=str,
+    )
+    parser.add_argument(
         '--max_epoch',
         type=int,
         default=200,

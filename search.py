@@ -22,8 +22,8 @@ import torch.nn as nn
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
-torch.backends.cudnn.enabled = False
-torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.enabled = True
+torch.backends.cudnn.benchmark = True
 
 
 class GrowCtrler(object):
