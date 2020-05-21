@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 from imageio import imsave
 from torchvision.utils import make_grid
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
 from utils.fid_score import calculate_fid_given_paths
 from utils.inception_score import get_inception_score
@@ -226,47 +226,55 @@ def train_controller(args, controller, ctrl_optimizer, gen_net, prev_hiddens, pr
     gen_net.eval()
 
     cur_stage = controller.cur_stage
-    for step in range(args.ctrl_step):
-        controller_step = writer_dict['controller_steps']
-        archs, selected_log_probs, entropies = controller.sample(args.ctrl_sample_batch, prev_hiddens=prev_hiddens,
-                                                                 prev_archs=prev_archs, cpu=args.cpu)
-        cur_batch_rewards = []
-        for arch in archs:
-            logger.info(f'arch: {arch}')
-            gen_net.set_arch(arch, cur_stage)
-            is_score = get_is(args, gen_net, args.rl_num_eval_img)
-            logger.info(f'get Inception score of {is_score}')
-            cur_batch_rewards.append(is_score)
-        if args.cpu:
-            cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False)
-        else:
-            cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False).cuda()
-        cur_batch_rewards = cur_batch_rewards.unsqueeze(-1) + args.entropy_coeff * entropies  # bs * 1
-        if baseline is None:
-            baseline = cur_batch_rewards
-        else:
-            baseline = args.baseline_decay * baseline.detach() + (1 - args.baseline_decay) * cur_batch_rewards
-        adv = cur_batch_rewards - baseline
+    value_dict = {
+        "arch": [],
+        "is": -1.0,
+    }
 
-        # policy loss
-        loss = -selected_log_probs * adv
-        loss = loss.sum()
+    with trange(0, args.ctrl_step, desc='epochs') as tbar:
+        for _ in tbar:
+            controller_step = writer_dict['controller_steps']
+            archs, selected_log_probs, entropies = controller.sample(args.ctrl_sample_batch, prev_hiddens=prev_hiddens,
+                                                                     prev_archs=prev_archs, cpu=args.cpu)
+            cur_batch_rewards = []
+            for arch in archs:
+                # logger.info(f'arch: {arch}')
+                gen_net.set_arch(arch, cur_stage)
+                is_score = get_is(args, gen_net, args.rl_num_eval_img)
+                # logger.info(f'get Inception score of {is_score}')
+                cur_batch_rewards.append(is_score)
 
-        # update controller
-        ctrl_optimizer.zero_grad()
-        loss.backward()
-        ctrl_optimizer.step()
+            tbar.set_postfix(value_dict)
+            if args.cpu:
+                cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False)
+            else:
+                cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False).cuda()
+            cur_batch_rewards = cur_batch_rewards.unsqueeze(-1) + args.entropy_coeff * entropies  # bs * 1
+            if baseline is None:
+                baseline = cur_batch_rewards
+            else:
+                baseline = args.baseline_decay * baseline.detach() + (1 - args.baseline_decay) * cur_batch_rewards
+            adv = cur_batch_rewards - baseline
 
-        # write
-        mean_reward = cur_batch_rewards.mean().item()
-        mean_adv = adv.mean().item()
-        mean_entropy = entropies.mean().item()
-        writer.add_scalar('controller/loss', loss.item(), controller_step)
-        writer.add_scalar('controller/reward', mean_reward, controller_step)
-        writer.add_scalar('controller/entropy', mean_entropy, controller_step)
-        writer.add_scalar('controller/adv', mean_adv, controller_step)
+            # policy loss
+            loss = -selected_log_probs * adv
+            loss = loss.sum()
 
-        writer_dict['controller_steps'] = controller_step + 1
+            # update controller
+            ctrl_optimizer.zero_grad()
+            loss.backward()
+            ctrl_optimizer.step()
+
+            # write
+            mean_reward = cur_batch_rewards.mean().item()
+            mean_adv = adv.mean().item()
+            mean_entropy = entropies.mean().item()
+            writer.add_scalar('controller/loss', loss.item(), controller_step)
+            writer.add_scalar('controller/reward', mean_reward, controller_step)
+            writer.add_scalar('controller/entropy', mean_entropy, controller_step)
+            writer.add_scalar('controller/adv', mean_adv, controller_step)
+
+            writer_dict['controller_steps'] = controller_step + 1
 
 
 def get_is(args, gen_net: nn.Module, num_img):
@@ -295,7 +303,7 @@ def get_is(args, gen_net: nn.Module, num_img):
         img_list.extend(list(gen_imgs))
 
     # get inception score
-    logger.info('calculate Inception score...')
+    # logger.info('calculate Inception score...')
     mean, std = get_inception_score(img_list)
 
     return mean

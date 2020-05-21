@@ -40,7 +40,7 @@ def get_inception_score(images, splits=10):
     with tf.Session(config=config) as sess:
         preds = []
         n_batches = int(math.ceil(float(len(inps)) / float(bs)))
-        for i in tqdm(range(n_batches), desc="Calculate inception score"):
+        for i in range(n_batches):
             sys.stdout.flush()
             inp = inps[(i * bs):min((i + 1) * bs, len(inps))]
             inp = np.concatenate(inp, 0)
