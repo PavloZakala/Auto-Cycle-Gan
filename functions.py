@@ -243,7 +243,10 @@ def train_controller(args, controller, ctrl_optimizer, gen_net, prev_hiddens, pr
                 is_score = get_is(args, gen_net, args.rl_num_eval_img)
                 # logger.info(f'get Inception score of {is_score}')
                 cur_batch_rewards.append(is_score)
-
+                value_dict.update({
+                    "arch": arch,
+                    "is": is_score,
+                })
             tbar.set_postfix(value_dict)
             if args.cpu:
                 cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False)
