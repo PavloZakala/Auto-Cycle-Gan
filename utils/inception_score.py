@@ -16,7 +16,6 @@ from tqdm import tqdm
 
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-MODEL_DIR = 'D:\\imagenet'
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
 softmax = None
 
@@ -26,7 +25,7 @@ config.gpu_options.allow_growth = True
 
 # Call this function with list of images. Each of elements should be a
 # numpy array with values ranging from 0 to 255.
-def get_inception_score(images, splits=10):
+def get_inception_score(images, splits=10,):
     assert (type(images) == list)
     assert (type(images[0]) == np.ndarray)
     assert (len(images[0].shape) == 3)
@@ -59,7 +58,7 @@ def get_inception_score(images, splits=10):
 
 
 # This function is called automatically.
-def _init_inception():
+def _init_inception(MODEL_DIR):
     global softmax
     if not os.path.exists(MODEL_DIR):
         os.makedirs(MODEL_DIR)

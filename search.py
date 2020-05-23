@@ -69,13 +69,15 @@ def create_shared_gan(args, weights_init):
                                      args.d_lr, (args.beta1, args.beta2))
     return gen_net, dis_net, gen_optimizer, dis_optimizer
 
+MODEL_DIR = 'D:\\imagenet'
+
 
 def main():
     args = cfg.parse_args()
     torch.cuda.manual_seed(args.random_seed)
 
     # set tf env
-    _init_inception()
+    _init_inception(MODEL_DIR)
     inception_path = check_or_download_inception(None)
     create_inception_graph(inception_path)
 
@@ -202,4 +204,7 @@ def main():
 
 
 if __name__ == '__main__':
+    import numpy as np
+    data = np.load("fid_stat/fid_stats_cifar10_train.npz")
+
     main()

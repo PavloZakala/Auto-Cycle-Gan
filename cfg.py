@@ -82,7 +82,7 @@ def parse_args():
         '--num_workers',
         type=int,
         default=8,
-        help='number of cpu threads to use during batch generation')
+        help='number of cpu threads to use during batch generatioarch n')
     parser.add_argument(
         '--latent_dim',
         type=int,

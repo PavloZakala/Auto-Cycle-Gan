@@ -23,6 +23,7 @@ from tensorboardX import SummaryWriter
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = True
 
+MODEL_DIR = 'D:\\imagenet'
 
 def main():
     args = cfg.parse_args()
@@ -34,12 +35,15 @@ def main():
     logger = create_logger(args.path_helper['log_path'], phase='test')
 
     # set tf env
-    _init_inception()
+    _init_inception(MODEL_DIR)
     inception_path = check_or_download_inception(None)
     create_inception_graph(inception_path)
 
     # import network
-    gen_net = eval('models.'+args.gen_model+'.Generator')(args=args).cuda()
+    if args.cpu:
+        gen_net = eval('models.' + args.gen_model + '.Generator')(args=args)
+    else:
+        gen_net = eval('models.'+args.gen_model+'.Generator')(args=args).cuda()
 
     # fid stat
     if args.dataset.lower() == 'cifar10':
@@ -51,7 +55,10 @@ def main():
     assert os.path.exists(fid_stat)
 
     # initial
-    fixed_z = torch.cuda.FloatTensor(np.random.normal(0, 1, (25, args.latent_dim)))
+    if args.cpu:
+        fixed_z = torch.FloatTensor(np.random.normal(0, 1, (25, args.latent_dim)))
+    else:
+        fixed_z = torch.cuda.FloatTensor(np.random.normal(0, 1, (25, args.latent_dim)))
 
     # set writer
     logger.info(f'=> resuming from {args.load_path}')

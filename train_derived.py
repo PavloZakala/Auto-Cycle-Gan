@@ -27,19 +27,24 @@ from copy import deepcopy
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = True
 
+MODEL_DIR = 'D:\\imagenet'
 
 def main():
     args = cfg.parse_args()
     torch.cuda.manual_seed(args.random_seed)
 
     # set tf env
-    _init_inception()
+    _init_inception(MODEL_DIR)
     inception_path = check_or_download_inception(None)
     create_inception_graph(inception_path)
 
     # import network
-    gen_net = eval('models_search.'+args.gen_model+'.Generator')(args=args).cuda()
-    dis_net = eval('models_search.'+args.dis_model+'.Discriminator')(args=args).cuda()
+    if args.cpu:
+        gen_net = eval('models_search.' + args.gen_model + '.Generator')(args=args)
+        dis_net = eval('models_search.' + args.dis_model + '.Discriminator')(args=args)
+    else:
+        gen_net = eval('models_search.'+args.gen_model+'.Generator')(args=args).cuda()
+        dis_net = eval('models_search.'+args.dis_model+'.Discriminator')(args=args).cuda()
 
     gen_net.set_arch(args.arch, cur_stage=2)
     dis_net.cur_stage = 2
@@ -90,7 +95,10 @@ def main():
         args.max_epoch = np.ceil(args.max_iter * args.n_critic / len(train_loader))
 
     # initial
-    fixed_z = torch.cuda.FloatTensor(np.random.normal(0, 1, (25, args.latent_dim)))
+    if args.cpu:
+        fixed_z = torch.FloatTensor(np.random.normal(0, 1, (25, args.latent_dim)))
+    else:
+        fixed_z = torch.cuda.FloatTensor(np.random.normal(0, 1, (25, args.latent_dim)))
     gen_avg_param = copy_params(gen_net)
     start_epoch = 0
     best_fid = 1e4
