@@ -208,8 +208,8 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
         # verbose
         if gen_step and iter_idx % args.print_freq == 0:
             tqdm.write(
-                "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f]" %
-                (epoch, args.max_epoch, iter_idx % len(train_loader), len(train_loader), d_loss.item(), g_loss.item()))
+                "[Batch %d/%d] [D loss: %f] [G loss: %f]" %
+                (iter_idx % len(train_loader), len(train_loader), d_loss.item(), g_loss.item()))
 
         writer_dict['train_global_steps'] = global_steps + 1
 
