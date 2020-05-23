@@ -137,7 +137,7 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
     gen_net = gen_net.train()
     dis_net = dis_net.train()
 
-    for iter_idx, (imgs, _) in enumerate(tqdm(train_loader)):
+    for iter_idx, (imgs, _) in enumerate(train_loader):
         global_steps = writer_dict['train_global_steps']
 
         # Adversarial ground truths
