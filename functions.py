@@ -16,7 +16,8 @@ from imageio import imsave
 from torchvision.utils import make_grid
 from tqdm import tqdm, trange
 
-from utils.fid_score import calculate_fid_given_paths
+# from utils.fid_score import calculate_fid_given_paths
+from utils.fid_score_torch import calculate_fid_given_paths
 from utils.inception_score import get_inception_score
 
 logger = logging.getLogger(__name__)
@@ -329,7 +330,7 @@ def validate(args, fixed_z, fid_stat, gen_net: nn.Module, writer_dict, clean_dir
 
     eval_iter = args.num_eval_imgs // args.eval_batch_size
     img_list = list()
-    for iter_idx in tqdm(range(eval_iter), desc='sample images'):
+    for iter_idx in tqdm(range(3), desc='sample images'):
         if args.cpu:
             z = torch.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
         else:
@@ -350,7 +351,9 @@ def validate(args, fixed_z, fid_stat, gen_net: nn.Module, writer_dict, clean_dir
 
     # get fid score
     logger.info('=> calculate fid score')
-    fid_score = calculate_fid_given_paths([fid_buffer_dir, fid_stat], inception_path=None)
+    # fid_score = calculate_fid_given_paths([fid_buffer_dir, fid_stat], inception_path=None)
+    fid_score = calculate_fid_given_paths([fid_buffer_dir, fid_stat], 64, not args.cpu, 2048)
+
     print(f"FID score: {fid_score}")
 
     if clean_dir:
