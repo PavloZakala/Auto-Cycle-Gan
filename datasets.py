@@ -49,7 +49,7 @@ class ImageDataset(object):
             tr.data = tr.data[:min(args.data_size, len(tr.data))]
             vl = Dt(root=args.data_path, train=False, transform=transform)
             vl.data = vl.data[:min(args.data_size, len(vl.data))]
-
+            print(args.dis_batch_size)
             self.train = torch.utils.data.DataLoader(
                 tr, batch_size=args.dis_batch_size, shuffle=True,
                 num_workers=args.num_workers, pin_memory=True)
