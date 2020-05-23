@@ -347,14 +347,14 @@ def validate(args, fixed_z, fid_stat, gen_net: nn.Module, writer_dict, clean_dir
     # get inception score
     logger.info('=> calculate inception score')
     mean, std = get_inception_score(img_list)
-    print(f"Inception score: {mean}")
+    # print(f"Inception score: {mean}")
 
     # get fid score
     logger.info('=> calculate fid score')
     # fid_score = calculate_fid_given_paths([fid_buffer_dir, fid_stat], inception_path=None)
     fid_score = calculate_fid_given_paths([fid_buffer_dir, fid_stat], 64, not args.cpu, 2048)
 
-    print(f"FID score: {fid_score}")
+    # print(f"FID score: {fid_score}")
 
     if clean_dir:
         os.system('rm -r {}'.format(fid_buffer_dir))

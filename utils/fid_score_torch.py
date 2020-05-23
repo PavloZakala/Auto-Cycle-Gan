@@ -122,7 +122,6 @@ def get_activations(files, model, batch_size=50, dims=2048,
         if cuda:
             batch = batch.cuda()
 
-        batch = normalize(batch)
         pred = model(batch)[0]
 
         # If model output is not scalar, apply global spatial average pooling.
