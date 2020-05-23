@@ -330,7 +330,7 @@ def validate(args, fixed_z, fid_stat, gen_net: nn.Module, writer_dict, clean_dir
 
     eval_iter = args.num_eval_imgs // args.eval_batch_size
     img_list = list()
-    for iter_idx in tqdm(range(3), desc='sample images'):
+    for iter_idx in tqdm(range(eval_iter), desc='sample images'):
         if args.cpu:
             z = torch.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
         else:
