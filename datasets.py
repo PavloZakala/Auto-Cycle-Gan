@@ -11,7 +11,7 @@ from torch.utils.data import Dataset
 
 
 class ImageDataset(object):
-    def __init__(self, args, cur_img_size=None):
+    def __init__(self, args, batch_size, num_workers, cur_img_size=None):
         img_size = cur_img_size if cur_img_size else args.img_size
         if args.dataset.lower() == 'cifar10':
             Dt = datasets.CIFAR10
@@ -34,13 +34,13 @@ class ImageDataset(object):
         if args.dataset.lower() == 'stl10':
             self.train = torch.utils.data.DataLoader(
                 Dt(root=args.data_path, split='train+unlabeled', transform=transform, download=True),
-                batch_size=args.dis_batch_size, shuffle=True,
-                num_workers=args.num_workers, pin_memory=True)
+                batch_size=batch_size, shuffle=True,
+                num_workers=num_workers, pin_memory=True)
 
             self.valid = torch.utils.data.DataLoader(
                 Dt(root=args.data_path, split='test', transform=transform),
-                batch_size=args.dis_batch_size, shuffle=False,
-                num_workers=args.num_workers, pin_memory=True)
+                batch_size=batch_size, shuffle=False,
+                num_workers=num_workers, pin_memory=True)
 
             self.test = self.valid
         else:
@@ -49,14 +49,13 @@ class ImageDataset(object):
             tr.data = tr.data[:min(args.data_size, len(tr.data))]
             vl = Dt(root=args.data_path, train=False, transform=transform)
             vl.data = vl.data[:min(args.data_size, len(vl.data))]
-            print(args.dis_batch_size)
             self.train = torch.utils.data.DataLoader(
-                tr, batch_size=args.dis_batch_size, shuffle=True,
-                num_workers=args.num_workers, pin_memory=True)
+                tr, batch_size=batch_size, shuffle=True,
+                num_workers=num_workers, pin_memory=True)
 
             self.valid = torch.utils.data.DataLoader(
-                vl, batch_size=args.dis_batch_size, shuffle=False,
-                num_workers=args.num_workers, pin_memory=True)
+                vl, batch_size=batch_size, shuffle=False,
+                num_workers=num_workers, pin_memory=True)
 
             self.test = self.valid
 
