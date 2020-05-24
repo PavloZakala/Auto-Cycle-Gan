@@ -18,6 +18,36 @@ class Generator(nn.Module):
         self.cell1 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=0, short_cut=True)
         self.cell2 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=1, short_cut=True)
         self.cell3 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=2, short_cut=True)
+        self.cell4 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=2, short_cut=True)
+        self.cell5 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=2, short_cut=True)
+        self.to_rgb = nn.Sequential(
+            nn.BatchNorm2d(args.gf_dim),
+            nn.ReLU(),
+            nn.Conv2d(args.gf_dim, 3, 3, 1, 1),
+            nn.Tanh()
+        )
+
+    def forward(self, z):
+        h = self.l1(z).view(-1, self.ch, self.bottom_width, self.bottom_width)
+        h1_skip_out, h1 = self.cell1(h)
+        h2_skip_out, h2 = self.cell2(h1, (h1_skip_out, ))
+        h3_skip_out, h3 = self.cell3(h2, (h1_skip_out, h2_skip_out))
+        h4_skip_out, h4 = self.cell4(h2, (h2_skip_out, h3_skip_out))
+        _, h5 = self.cell5(h2, (h3_skip_out, h4_skip_out))
+        output = self.to_rgb(h5)
+
+        return output
+
+class Generator_last(nn.Module):
+    def __init__(self, args):
+        super(Generator_last, self).__init__()
+        self.args = args
+        self.ch = args.gf_dim
+        self.bottom_width = args.bottom_width
+        self.l1 = nn.Linear(args.latent_dim, (self.bottom_width ** 2) * args.gf_dim)
+        self.cell1 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=0, short_cut=True)
+        self.cell2 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=1, short_cut=True)
+        self.cell3 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=2, short_cut=True)
         self.to_rgb = nn.Sequential(
             nn.BatchNorm2d(args.gf_dim),
             nn.ReLU(),

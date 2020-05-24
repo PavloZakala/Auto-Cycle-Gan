@@ -77,7 +77,7 @@ def main():
     dis_scheduler = LinearLrDecay(dis_optimizer, args.d_lr, 0.0, 0, args.max_iter * args.n_critic)
 
     # set up data_loader
-    dataset = datasets.ImageDataset(args)
+    dataset = datasets.ImageDataset(args, args.dis_batch_size, args.num_workers)
     train_loader = dataset.train
 
     # fid stat
