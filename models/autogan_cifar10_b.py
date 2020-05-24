@@ -19,7 +19,6 @@ class Generator(nn.Module):
         self.cell2 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=1, short_cut=True)
         self.cell3 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=2, short_cut=True)
         self.cell4 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=2, short_cut=True)
-        self.cell5 = Cell(args.gf_dim, args.gf_dim, 'nearest', num_skip_in=2, short_cut=True)
         self.to_rgb = nn.Sequential(
             nn.BatchNorm2d(args.gf_dim),
             nn.ReLU(),
@@ -32,9 +31,9 @@ class Generator(nn.Module):
         h1_skip_out, h1 = self.cell1(h)
         h2_skip_out, h2 = self.cell2(h1, (h1_skip_out, ))
         h3_skip_out, h3 = self.cell3(h2, (h1_skip_out, h2_skip_out))
-        h4_skip_out, h4 = self.cell4(h3, (h2_skip_out, h3_skip_out))
-        _, h5 = self.cell5(h4, (h3_skip_out, h4_skip_out))
-        output = self.to_rgb(h5)
+        _, h4 = self.cell4(h3, (h2_skip_out, h3_skip_out))
+        # _, h5 = self.cell5(h4, (h3_skip_out, h4_skip_out))
+        output = self.to_rgb(h4)
 
         return output
 
