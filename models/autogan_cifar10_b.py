@@ -32,8 +32,8 @@ class Generator(nn.Module):
         h1_skip_out, h1 = self.cell1(h)
         h2_skip_out, h2 = self.cell2(h1, (h1_skip_out, ))
         h3_skip_out, h3 = self.cell3(h2, (h1_skip_out, h2_skip_out))
-        h4_skip_out, h4 = self.cell4(h2, (h2_skip_out, h3_skip_out))
-        _, h5 = self.cell5(h2, (h3_skip_out, h4_skip_out))
+        h4_skip_out, h4 = self.cell4(h3, (h2_skip_out, h3_skip_out))
+        _, h5 = self.cell5(h4, (h3_skip_out, h4_skip_out))
         output = self.to_rgb(h5)
 
         return output

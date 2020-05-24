@@ -32,14 +32,18 @@ class ImageDataset(object):
             raise NotImplementedError('Unknown dataset: {}'.format(args.dataset))
 
         if args.dataset.lower() == 'stl10':
+
+            tr = Dt(root=args.data_path, split='train+unlabeled', transform=transform, download=True)
+            tr.data = tr.data[:min(args.data_size, len(tr.data))]
+            vl = Dt(root=args.data_path, split='test', transform=transform)
+            vl.data = vl.data[:min(args.data_size, len(vl.data))]
+
             self.train = torch.utils.data.DataLoader(
-                Dt(root=args.data_path, split='train+unlabeled', transform=transform, download=True),
-                batch_size=batch_size, shuffle=True,
+                tr, batch_size=batch_size, shuffle=True,
                 num_workers=num_workers, pin_memory=True)
 
             self.valid = torch.utils.data.DataLoader(
-                Dt(root=args.data_path, split='test', transform=transform),
-                batch_size=batch_size, shuffle=False,
+                vl, batch_size=batch_size, shuffle=False,
                 num_workers=num_workers, pin_memory=True)
 
             self.test = self.valid
