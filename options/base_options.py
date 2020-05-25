@@ -1,6 +1,6 @@
 import argparse
 import os
-from utils import util
+from utils import utils as util
 import torch
 import models
 import data
