@@ -63,16 +63,16 @@ class UnalignedDataset(BaseDataset):
             A_paths (str)    -- image paths
             B_paths (str)    -- image paths
         """
-        A_path = self.A_paths[index % self.A_size]  # make sure index is within then range
+        # A_path = self.A_paths[index % self.A_size]  # make sure index is within then range
         A = self.A_images[index % self.A_size].clone()
         if self.opt.serial_batches:  # make sure index is within then range
             index_B = index % self.B_size
         else:  # randomize the index for domain B to avoid fixed pairs.
             index_B = random.randint(0, self.B_size - 1)
-        B_path = self.B_paths[index_B]
+        # B_path = self.B_paths[index_B]
         B = self.B_images[index_B].clone()
 
-        return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path}
+        return {'A': A, 'B': B, 'A_paths': "A_path", 'B_paths': "B_path"}
 
     def __len__(self):
         """Return the total number of images in the dataset.
