@@ -13,6 +13,7 @@ import models.autogan_cifar10_b
 import models.autogan_cifar10_c
 
 import importlib
+import models
 from models.base_model import BaseModel
 
 

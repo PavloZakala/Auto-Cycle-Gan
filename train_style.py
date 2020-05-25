@@ -26,11 +26,8 @@ def train(args, epoch, dataset, model, logger):
             message = "[Batch: %d/%d][time: %.3f]" % (i, len(dataset), t_comp)
             for k, v in losses.items():
                 message += '[%s: %.3f]' % (k, v)
+            logger.info(message)
             tqdm.write(message)
-
-        if (i+1) % args.display_freq == 0:
-            model.compute_visuals()
-            utils.save_current_results(args, model.get_current_visuals(), epoch)
 
     model.update_learning_rate()
 
@@ -53,10 +50,14 @@ def main():
     for epoch in tqdm(range(0, args.n_epochs + args.n_epochs_decay + 1)):
         train(args, epoch, dataset, model, logger)
 
-        if epoch % args.save_epoch_freq == 0:
+        if (epoch+1) % args.save_epoch_freq == 0:
             logger.info('saving the model at the end of epoch %d' % (epoch))
             model.save_networks('latest')
             model.save_networks(epoch)
+
+        if (epoch+1) % args.display_freq == 0:
+            model.compute_visuals()
+            utils.save_current_results(args, model.get_current_visuals(), epoch)
 
 
 if __name__ == '__main__':
