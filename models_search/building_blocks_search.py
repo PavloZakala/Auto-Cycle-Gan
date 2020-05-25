@@ -13,7 +13,7 @@ NORM_TYPE = {0: None, 1: 'bn', 2: 'in'}
 UP_TYPE = {0: 'bilinear', 1: 'nearest', 2: 'deconv'}
 SHORT_CUT_TYPE = {0: False, 1: True}
 SKIP_TYPE = {0: False, 1: True}
-
+DOWN_TYPE = {0: 'maxpool', 1:"avgpool"}
 
 def decimal2binary(n):
     return bin(n).replace("0b", "")
@@ -105,6 +105,86 @@ class PostGenBlock(nn.Module):
 class Cell(nn.Module):
     def __init__(self, in_channels, out_channels, num_skip_in, ksize=3):
         super(Cell, self).__init__()
+
+        self.post_conv1 = PostGenBlock(in_channels, out_channels, ksize=ksize, up_block=True)
+        self.pre_conv1 = PreGenBlock(in_channels, out_channels, ksize=ksize, up_block=True)
+
+        self.post_conv2 = PostGenBlock(out_channels, out_channels, ksize=ksize, up_block=False)
+        self.pre_conv2 = PreGenBlock(out_channels, out_channels, ksize=ksize, up_block=False)
+
+        self.deconv_sc = nn.ConvTranspose2d(
+            in_channels, in_channels, kernel_size=2, stride=2)
+        self.c_sc = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+
+        # skip_in
+        self.skip_deconvx2 = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+        self.skip_deconvx4 = nn.Sequential(
+            nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
+            nn.ConvTranspose2d(out_channels, out_channels, kernel_size=2, stride=2)
+        )
+
+        self.num_skip_in = num_skip_in
+        if num_skip_in:
+            self.skip_in_ops = nn.ModuleList([nn.Conv2d(in_channels, out_channels, kernel_size=1) for _ in range(num_skip_in)])
+
+    def set_arch(self, conv_id, norm_id, up_id, short_cut_id, skip_ins):
+        self.post_conv1.set_arch(up_id, norm_id)
+        self.pre_conv1.set_arch(up_id, norm_id)
+        self.post_conv2.set_arch(up_id, norm_id)
+        self.pre_conv2.set_arch(up_id, norm_id)
+
+        if self.num_skip_in:
+            self.skip_ins = [0 for _ in range(self.num_skip_in)]
+            for skip_idx, skip_in in enumerate(decimal2binary(skip_ins)[::-1]):
+                self.skip_ins[-(skip_idx + 1)] = int(skip_in)
+
+        self.conv_type = CONV_TYPE[conv_id]
+        self.up_type = UP_TYPE[up_id]
+        self.short_cut = SHORT_CUT_TYPE[short_cut_id]
+
+    def forward(self, x, skip_ft=None):
+        residual = x
+
+        # first conv
+        if self.conv_type == 'post':
+            h = self.post_conv1(residual)
+        elif self.conv_type == 'pre':
+            h = self.pre_conv1(residual)
+        else:
+            raise NotImplementedError(self.norm_type)
+        _, _, ht, wt = h.size()
+        h_skip_out = h
+        # second conv
+        if self.num_skip_in:
+            assert len(self.skip_in_ops) == len(self.skip_ins)
+            for skip_flag, ft, skip_in_op in zip(self.skip_ins, skip_ft, self.skip_in_ops):
+                if skip_flag:
+                    if self.up_type != 'deconv':
+                        h += skip_in_op(F.interpolate(ft, size=(ht, wt), mode=self.up_type))
+                    else:
+                        scale = wt // ft.size()[-1]
+                        h += skip_in_op(getattr(self, f'skip_deconvx{scale}')(ft))
+
+        if self.conv_type == 'post':
+            final_out = self.post_conv2(h)
+        elif self.conv_type == 'pre':
+            final_out = self.pre_conv2(h)
+        else:
+            raise NotImplementedError(self.norm_type)
+
+        # shortcut
+        if self.short_cut:
+            if self.up_type != 'deconv':
+                final_out += self.c_sc(F.interpolate(x, scale_factor=2, mode=self.up_type))
+            else:
+                final_out += self.c_sc(self.deconv_sc(x))
+
+        return h_skip_out, final_out
+
+
+class CellDown(nn.Module):
+    def __init__(self, in_channels, out_channels, num_skip_in, ksize=3):
+        super(CellDown, self).__init__()
 
         self.post_conv1 = PostGenBlock(in_channels, out_channels, ksize=ksize, up_block=True)
         self.pre_conv1 = PreGenBlock(in_channels, out_channels, ksize=ksize, up_block=True)

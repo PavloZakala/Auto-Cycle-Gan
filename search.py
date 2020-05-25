@@ -142,7 +142,7 @@ def main():
         controller, ctrl_optimizer = create_ctrler(args, cur_stage, weights_init)
 
     # set up data_loader
-    dataset = datasets.ImageDataset(args, 2**(cur_stage+3))
+    dataset = datasets.ImageDataset(args, 2**(cur_stage+3), args.dis_batch_size, args.num_workers)
     train_loader = dataset.train
 
     logger.info(args)
@@ -170,7 +170,7 @@ def main():
             del ctrl_optimizer
             controller, ctrl_optimizer = create_ctrler(args, cur_stage, weights_init)
 
-            dataset = datasets.ImageDataset(args, 2 ** (cur_stage + 3))
+            dataset = datasets.ImageDataset(args, 2 ** (cur_stage + 3), args.dis_batch_size, args.num_workers)
             train_loader = dataset.train
 
         dynamic_reset = train_shared(args, gen_net, dis_net, g_loss_history, d_loss_history, controller, gen_optimizer,

@@ -8,6 +8,25 @@ import torch.nn as nn
 from models_search.building_blocks_search import Cell
 
 
+class GeneratorED(nn.Module):
+
+    def __init__(self, args):
+        super(GeneratorED, self).__init__()
+        self.args = args
+        self.ch = args.gf_dim
+        self.bottom_width = args.bottom_width
+        # self.l1 = nn.Linear(args.latent_dim, (self.bottom_width ** 2) * args.gf_dim)
+        self.cell1 = Cell(args.gf_dim, args.gf_dim, num_skip_in=0)
+        self.cell2 = Cell(args.gf_dim, args.gf_dim, num_skip_in=1)
+        self.cell3 = Cell(args.gf_dim, args.gf_dim, num_skip_in=2)
+        self.to_rgb = nn.Sequential(
+            nn.BatchNorm2d(args.gf_dim),
+            nn.ReLU(),
+            nn.Conv2d(args.gf_dim, 3, 3, 1, 1),
+            nn.Tanh()
+        )
+
+
 class Generator(nn.Module):
     def __init__(self, args):
         super(Generator, self).__init__()

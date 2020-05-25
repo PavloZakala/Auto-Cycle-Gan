@@ -1,7 +1,8 @@
 /__pycache__/
 /.idea/
 /logs/
-/data/
-/__pycache__/
-/utils/__pycache__/
+/datasets/
+/fid_stat/
+/logs_eval/
+/pre_mod/
 *.pyc

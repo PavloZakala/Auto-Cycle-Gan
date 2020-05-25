@@ -139,7 +139,7 @@ def parse_args():
     parser.add_argument(
         '--data_path',
         type=str,
-        default='./data',
+        default='./datasets',
         help='The path of data set')
     parser.add_argument('--cpu', help='use cpu',
                         action='store_true')
@@ -196,7 +196,7 @@ def parse_args():
     parser.add_argument('--num_candidate', type=int, default=10,
                         help='number of candidate architectures to be sampled')
     parser.add_argument('--topk', type=int, default=5,
-                        help='preserve topk models architectures after each stage' )
+                        help='preserve topk models architectures after each stage')
     parser.add_argument('--entropy_coeff', type=float, default=1e-3,
                         help='to encourage the exploration')
     parser.add_argument('--dynamic_reset_threshold', type=float, default=1e-3,
@@ -205,6 +205,35 @@ def parse_args():
                         help='the window size')
     parser.add_argument('--arch', nargs='+', type=int,
                         help='the vector of a discovered architecture')
+
+
+    # # dataset parameters
+    # parser.add_argument('--dataset_mode', type=str, default='unaligned',
+    #                     help='chooses how datasets are loaded. [unaligned | aligned | single | colorization]')
+    # parser.add_argument('--direction', type=str, default='AtoB', help='AtoB or BtoA')
+    # parser.add_argument('--serial_batches', action='store_true',
+    #                     help='if true, takes images in order to make batches, otherwise takes them randomly')
+    # parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
+    # parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
+    # parser.add_argument('--load_size', type=int, default=286, help='scale images to this size')
+    # parser.add_argument('--crop_size', type=int, default=256, help='then crop to this size')
+    # parser.add_argument('--max_dataset_size', type=int, default=float("inf"),
+    #                     help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
+    # parser.add_argument('--preprocess', type=str, default='resize_and_crop',
+    #                     help='scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none]')
+    # parser.add_argument('--no_flip', action='store_true',
+    #                     help='if specified, do not flip the images for data augmentation')
+    # parser.add_argument('--display_winsize', type=int, default=256, help='display window size for both visdom and HTML')
+    # parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
+    #
+    # parser.add_argument('--model', type=str, default='cycle_gan',
+    #                     help='chooses which model to use. [cycle_gan | pix2pix | test | colorization]')
+    # parser.add_argument('--input_nc', type=int, default=3,
+    #                     help='# of input image channels: 3 for RGB and 1 for grayscale')
+    # parser.add_argument('--output_nc', type=int, default=3,
+    #                     help='# of output image channels: 3 for RGB and 1 for grayscale')
+    # parser.add_argument('--pool_size', type=int, default=50,
+    #                     help='the size of image buffer that stores previously generated images')
 
     opt = parser.parse_args()
 
