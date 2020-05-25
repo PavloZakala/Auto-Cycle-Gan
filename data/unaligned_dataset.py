@@ -3,6 +3,7 @@ from data.base_dataset import BaseDataset, get_transform
 from data.image_folder import make_dataset
 from PIL import Image
 import random
+import pickle as plt
 
 
 class UnalignedDataset(BaseDataset):
@@ -15,6 +16,11 @@ class UnalignedDataset(BaseDataset):
     Similarly, you need to prepare two directories:
     '/path/to/data/testA' and '/path/to/data/testB' during test time.
     """
+    def load_data(self, path):
+
+        with open(path, 'rb') as f:
+            data = plt.load(f)
+        return data
 
     def __init__(self, opt):
         """Initialize this dataset class.
@@ -34,13 +40,16 @@ class UnalignedDataset(BaseDataset):
         self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')  # create a path '/path/to/data/trainA'
         self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')  # create a path '/path/to/data/trainB'
 
-        self.A_paths = sorted(make_dataset(self.dir_A, opt.max_dataset_size))  # load images from '/path/to/data/trainA'
-        self.B_paths = sorted(make_dataset(self.dir_B, opt.max_dataset_size))  # load images from '/path/to/data/trainB'
+        # self.A_paths = sorted(make_dataset(self.dir_A, opt.max_dataset_size))  # load images from '/path/to/data/trainA'
+        # self.B_paths = sorted(make_dataset(self.dir_B, opt.max_dataset_size))  # load images from '/path/to/data/trainB'
 
-        self.A_images = [self.transform_A(Image.open(a_p).convert('RGB')) for a_p in self.A_paths]
-        self.B_images = [self.transform_B(Image.open(b_p).convert('RGB')) for b_p in self.B_paths]
-        self.A_size = len(self.A_paths)  # get the size of dataset A
-        self.B_size = len(self.B_paths)  # get the size of dataset B
+        dataA = self.load_data("{}.plt".format(self.dir_A))
+        dataB = self.load_data("{}.plt".format(self.dir_B))
+
+        self.A_images = [self.transform_A(img) for img in dataA]
+        self.B_images = [self.transform_B(img) for img in dataB]
+        self.A_size = len(self.A_images)  # get the size of dataset A
+        self.B_size = len(self.B_images)  # get the size of dataset B
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
