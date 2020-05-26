@@ -47,17 +47,35 @@ def main():
     model = create_model(args)  # create a model given opt.model and other options
     model.setup(args)  # regular setup: load and print networks; create schedulers
 
+    total = 0
     for epoch in tqdm(range(0, args.n_epochs + args.n_epochs_decay + 1)):
-        train(args, epoch, dataset, model, logger)
+        for i, data in enumerate(dataset):  # inner loop within one epoch
 
-        if (epoch+1) % args.save_epoch_freq == 0:
-            logger.info('saving the model at the end of epoch %d' % (epoch))
-            model.save_networks('latest')
-            model.save_networks(epoch)
+            iter_start_time = time.time()
 
-        if (epoch+1) % args.display_freq == 0:
-            model.compute_visuals()
-            utils.save_current_results(args, model.get_current_visuals(), epoch)
+            model.set_input(data)
+            model.optimize_parameters()
+
+            if (total + 1) % args.print_freq == 0:
+                losses = model.get_current_losses()
+                t_comp = (time.time() - iter_start_time)
+                message = "[Batch: %d/%d][time: %.3f]" % (i, len(dataset), t_comp)
+                for k, v in losses.items():
+                    message += '[%s: %.3f]' % (k, v)
+                logger.info(message)
+                tqdm.write(message)
+
+            if (total + 1) % args.display_freq == 0:
+                model.compute_visuals()
+                utils.save_current_results(args, model.get_current_visuals(), epoch)
+
+            if (total + 1) % args.save_epoch_freq == 0:
+                logger.info('saving the model at the end of epoch %d' % (epoch))
+                model.save_networks('latest')
+                model.save_networks(epoch)
+
+            total += 1
+        model.update_learning_rate()
 
 
 if __name__ == '__main__':
