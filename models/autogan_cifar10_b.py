@@ -45,10 +45,10 @@ class GeneratorED(nn.Module):
         self.down_cell1 = CellDown(3, gf_dim, 'maxpool', skip_in=[], short_cut=True)
         self.down_cell2 = CellDown(gf_dim, gf_dim * 2, 'maxpool', skip_in=[], short_cut=True)
         self.down_cell3 = CellDown(gf_dim * 2, gf_dim * 4, 'maxpool', skip_in=[], short_cut=True)
-        self.down_cell4 = CellDown(gf_dim * 4, gf_dim * 8, 'maxpool', skip_in=[], short_cut=True)
-
-        self.up_cell4 = CellUp(gf_dim * 8, gf_dim * 4, 'nearest', skip_in=[], short_cut=True)
-        self.up_cell3 = CellUp(gf_dim * 4, gf_dim * 2, 'nearest', skip_in=[gf_dim * 4], short_cut=True)
+        # self.down_cell4 = CellDown(gf_dim * 4, gf_dim * 8, 'maxpool', skip_in=[], short_cut=True)
+        #
+        # self.up_cell4 = CellUp(gf_dim * 8, gf_dim * 4, 'nearest', skip_in=[], short_cut=True)
+        self.up_cell3 = CellUp(gf_dim * 4, gf_dim * 2, 'nearest', skip_in=[], short_cut=True)
         self.up_cell2 = CellUp(gf_dim * 2, gf_dim, 'nearest', skip_in=[gf_dim * 2], short_cut=True)
         self.up_cell1 = CellUp(gf_dim, gf_dim, 'nearest', skip_in=[gf_dim])
         self.to_rgb = nn.Sequential(
@@ -62,10 +62,10 @@ class GeneratorED(nn.Module):
         h1, x = self.down_cell1(x, [])
         h2, x = self.down_cell2(x, [])
         h3, x = self.down_cell3(x, [])
-        h4, x = self.down_cell4(x, [])
+        # h4, x = self.down_cell4(x, [])
 
-        _, x = self.up_cell4(x, [])
-        _, x = self.up_cell3(x, [h3])
+        # _, x = self.up_cell4(x, [])
+        _, x = self.up_cell3(x, [])
         _, x = self.up_cell2(x, [h2])
         _, x = self.up_cell1(x, [h1])
 
