@@ -4,4 +4,5 @@
 /datasets/
 /fid_stat/
 /logs_eval/
+/checkpoints/
 *.pyc

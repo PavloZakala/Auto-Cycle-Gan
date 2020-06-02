@@ -34,4 +34,8 @@ class SearchOptions(TrainOptions):
                             help='the size of hidden vector')
         parser.add_argument('--load_path', type=str,
                             help='The reload model path')
+        parser.add_argument('--print_freq_controller', type=int, default=10,
+                            help='frequency of showing training results on console')
+        parser.add_argument('--num_candidate', type=int, default=10,
+                            help='number of candidate architectures to be sampled')
         return parser

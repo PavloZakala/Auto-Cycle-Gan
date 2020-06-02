@@ -135,7 +135,7 @@ class BaseModel(ABC):
                 scheduler.step()
 
         lr = self.optimizers[0].param_groups[0]['lr']
-        self.opt.logger.info('learning rate = %.7f' % lr)
+        tqdm.write('learning rate = %.7f' % lr)
 
     def get_current_visuals(self):
         """Return visualization images. train.py will display these images with visdom, and save the images to a HTML"""

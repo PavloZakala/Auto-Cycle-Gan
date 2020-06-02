@@ -34,30 +34,32 @@ class CycleControllerModel(BaseModel):
         return parser
 
     @staticmethod
-    def get_score(opt, netG, netD, dataloader):
+    def get_score(opt, netG, netD, dataloader, loss, data_name):
 
         # eval mode
         netG.eval()
         img_list = list()
         ds = list()
         with torch.no_grad():
-            for imgs in dataloader:
+            for data in dataloader:
+                imgs = data[data_name]
                 if len(opt.gpu_ids) != 0:
                     imgs = imgs.cuda()
 
                 conv_imgs = netG(imgs)
-                d = netD(conv_imgs)
+
+                d = [float(loss(im.unsqueeze(0), True)) for im in conv_imgs]
                 conv_imgs = conv_imgs.mul_(127.5).add_(127.5).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu',
                                                                                                         torch.uint8).numpy()
                 img_list.extend(list(conv_imgs))
-                ds.append(list(d))
+                ds.extend(d)
 
-        mean_is, std_is = get_inception_score(img_list)
+        mean_is, std_is = get_inception_score(img_list, splits=1)
 
         mean_d = 1 / np.mean(ds)
         std_d = 1 / np.std(ds)
 
-        return mean_is / 3.0, mean_d
+        return mean_is, mean_d * 3.0
 
     def __init__(self, opt, cur_stage):
 
@@ -66,7 +68,6 @@ class CycleControllerModel(BaseModel):
         self.loss_names = ["A", "B",
                            'D_A', 'D_B',
                            'IS_A', 'IS_B',
-                           'arch_A', 'arch_B',
                            'reward_A', 'reward_B',
                            "adv_A", "adv_B",
                            "entropy_A", "entropy_B"]
@@ -104,9 +105,9 @@ class CycleControllerModel(BaseModel):
 
         self.optimizers_names = ["A", "B"]
         self.optimizerA = torch.optim.Adam(filter(lambda p: p.requires_grad, self.netC_A.parameters()),
-                                            opt.ctrl_lr, (0.0, 0.9))
+                                           opt.ctrl_lr, (0.0, 0.9))
         self.optimizerB = torch.optim.Adam(filter(lambda p: p.requires_grad, self.netC_A.parameters()),
-                                            opt.ctrl_lr, (0.0, 0.9))
+                                           opt.ctrl_lr, (0.0, 0.9))
 
         self.optimizers.append(self.optimizerA)
         self.optimizers.append(self.optimizerB)
@@ -153,11 +154,11 @@ class CycleControllerModel(BaseModel):
 
     def save_networks(self, epoch):
         state_dict = super().save_networks(epoch)
-        state_dict["prev_hiddens_A"] = self.prev_hiddens_A.cpu() if self.prev_hiddens_A else None
-        state_dict["prev_hiddens_B"] = self.prev_hiddens_B.cpu() if self.prev_hiddens_B else None
+        state_dict["prev_hiddens_A"] = self.prev_hiddens_A
+        state_dict["prev_hiddens_B"] = self.prev_hiddens_B
 
-        state_dict["prev_archs_A"] = self.prev_archs_A.cpu() if self.prev_archs_A else None
-        state_dict["prev_archs_B"] = self.prev_archs_B.cpu() if self.prev_archs_B else None
+        state_dict["prev_archs_A"] = self.prev_archs_A
+        state_dict["prev_archs_B"] = self.prev_archs_B
 
         return state_dict
 
@@ -168,7 +169,6 @@ class CycleControllerModel(BaseModel):
 
         self.prev_archs_A = opt_state_dict["prev_archs_A"]
         self.prev_archs_B = opt_state_dict["prev_archs_B"]
-
 
     def set_input(self, input):
 
@@ -187,12 +187,12 @@ class CycleControllerModel(BaseModel):
         cur_batch_rewards = []
         for arch in archs:
             self.netG_A.set_arch(arch, self.cur_stage)
-            is_score, d_score = self.get_score(self.opt, self.netG_A, self.netD_A, self.valid_dataloader)
+            is_score, d_score = self.get_score(self.opt, self.netG_A, self.netD_A, self.valid_dataloader, self.loss,
+                                               "A")
             cur_batch_rewards.append(is_score + d_score)
             self.loss_IS_A = is_score
             self.loss_D_A = d_score
-            self.loss_arch_A = arch
-
+        self.arch_A = archs.tolist()
         cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False)
         if len(self.gpu_ids) != 0:
             cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False).cuda()
@@ -226,12 +226,12 @@ class CycleControllerModel(BaseModel):
         cur_batch_rewards = []
         for arch in archs:
             self.netG_B.set_arch(arch, self.cur_stage)
-            is_score, d_score = self.get_score(self.opt, self.netG_B, self.loss_D_B, self.valid_dataloader)
+            is_score, d_score = self.get_score(self.opt, self.netG_B, self.netD_B, self.valid_dataloader, self.loss,
+                                               "B")
             cur_batch_rewards.append(is_score + d_score)
             self.loss_IS_B = is_score
             self.loss_D_B = d_score
-            self.loss_arch_B = arch
-
+        self.arch_B = archs.tolist()
         cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False)
         if len(self.gpu_ids) != 0:
             cur_batch_rewards = torch.tensor(cur_batch_rewards, requires_grad=False).cuda()
@@ -262,13 +262,15 @@ class CycleControllerModel(BaseModel):
         cur_stage = self.netC_A.cur_stage
         archs, _, _, hiddens = self.netC_A.sample(self.opt.num_candidate, with_hidden=True,
                                                   prev_archs=self.prev_archs_A,
-                                                  prev_hiddens=self.prev_hiddens_A)
+                                                  prev_hiddens=self.prev_hiddens_A,
+                                                  cpu=len(self.gpu_ids) == 0)
         hxs, cxs = hiddens
         arch_idx_perf_table = {}
         for arch_idx in range(len(archs)):
             self.netG_A.set_arch(archs[arch_idx], cur_stage)
-            is_score = self.get_score(self.opt, self.netG_A, self.netD_A, self.opt.rl_num_eval_img)
-            arch_idx_perf_table[arch_idx] = is_score
+            is_score, d_score = self.get_score(self.opt, self.netG_A, self.netD_A, self.valid_dataloader,
+                                               self.loss, "A")
+            arch_idx_perf_table[arch_idx] = is_score + d_score
         topk_arch_idx_perf = sorted(arch_idx_perf_table.items(), key=operator.itemgetter(1))[::-1][:self.opt.topk]
         topk_archs = []
         topk_hxs = []
@@ -287,13 +289,15 @@ class CycleControllerModel(BaseModel):
         cur_stage = self.netC_B.cur_stage
         archs, _, _, hiddens = self.netC_B.sample(self.opt.num_candidate, with_hidden=True,
                                                   prev_archs=self.prev_archs_B,
-                                                  prev_hiddens=self.prev_hiddens_B)
+                                                  prev_hiddens=self.prev_hiddens_B,
+                                                  cpu=len(self.gpu_ids) == 0)
         hxs, cxs = hiddens
         arch_idx_perf_table = {}
         for arch_idx in range(len(archs)):
             self.netG_B.set_arch(archs[arch_idx], cur_stage)
-            is_score = self.get_score(self.opt, self.netG_B, self.netD_B, self.opt.rl_num_eval_img)
-            arch_idx_perf_table[arch_idx] = is_score
+            is_score, d_score = self.get_score(self.opt, self.netG_B, self.netD_B, self.valid_dataloader,
+                                               self.loss, "B")
+            arch_idx_perf_table[arch_idx] = is_score + d_score
         topk_arch_idx_perf = sorted(arch_idx_perf_table.items(), key=operator.itemgetter(1))[::-1][:self.opt.topk]
         topk_archs = []
         topk_hxs = []

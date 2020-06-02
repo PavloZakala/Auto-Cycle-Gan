@@ -2,12 +2,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import time
 
 import torch
 from tensorboardX import SummaryWriter
-from tqdm import tqdm, trange
-import os
+from tqdm import tqdm
 
 from data import create_dataset
 from models.cycle_gan_model import CycleGANModel
@@ -20,12 +20,13 @@ from utils.utils import set_log_dir, save_current_results, RunningStats, save_ch
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = True
 
+
 class GrowCtrler(object):
     def __init__(self, grow_step):
         self.grow_step = grow_step
 
     def cur_stage(self, search_iter):
-        return search_iter // self.grow_step
+        return search_iter // self.grow_step + 1
 
 
 def cyclgan_train(opt, cycle_gan: CycleGANModel,
@@ -38,7 +39,6 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
     cycle_controller.eval()
 
     dynamic_reset = False
-    tqdm.write('=> train shared GAN...')
     writer = writer_dict['writer']
     total_iters = 0
     t_data = 0.0
@@ -70,8 +70,8 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
             if (i + 1) % opt.print_freq == 0:
                 losses = cycle_gan.get_current_losses()
                 t_comp = (time.time() - iter_start_time)
-                message = "[Ep: %d/%d]" % (epoch, opt.shared_epoch)
-                message += "[Batch: %d/%d][time: %.3f][data: %.3f]" % (total_iters, len(train_loader), t_comp, t_data)
+                message = "GAN: [Ep: %d/%d]" % (epoch, opt.shared_epoch)
+                message += "[Batch: %d/%d][time: %.3f][data: %.3f]" % (epoch_iter, len(train_loader), t_comp, t_data)
                 for k, v in losses.items():
                     message += '[%s: %.3f]' % (k, v)
                 tqdm.write(message)
@@ -128,7 +128,6 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
 def controller_train(opt, cycle_gan: CycleGANModel,
                      cycle_controller: CycleControllerModel,
                      writer_dict):
-    tqdm.write("=> train controller...")
     writer = writer_dict['writer']
 
     # train mode
@@ -136,13 +135,23 @@ def controller_train(opt, cycle_gan: CycleGANModel,
 
     # eval mode
     cycle_gan.eval()
-
+    iter_start_time = time.time()
     for i in range(0, opt.ctrl_step):
         controller_step = writer_dict['controller_steps']
 
         cycle_controller.step_A()
         cycle_controller.step_B()
 
+        if (i + 1) % opt.print_freq_controller == 0:
+            losses = cycle_controller.get_current_losses()
+            t_comp = (time.time() - iter_start_time)
+            iter_start_time = time.time()
+            message = "Cont: [Ep: %d/%d]" % (i, opt.ctrl_step) + "[{}][{}]".format(cycle_controller.arch_A,
+                                                                                   cycle_controller.arch_B)
+            message += "[time: %.3f]" % (t_comp)
+            for k, v in losses.items():
+                message += '[%s: %.3f]' % (k, v)
+            tqdm.write(message)
         # write
         writer.add_scalars('Controller/loss', {
             "A": cycle_controller.loss_A.item(),
@@ -173,7 +182,9 @@ def controller_train(opt, cycle_gan: CycleGANModel,
 
         writer_dict['controller_steps'] = controller_step + 1
 
+
 MODEL_DIR = 'D:\\imagenet'
+
 
 def main():
     opt = SearchOptions().parse()
@@ -187,7 +198,6 @@ def main():
     cur_stage = 1
 
     grow_ctrler = GrowCtrler(opt.grow_step)
-    opt.max_search_iter = opt.grow_step * (opt.n_resnet - 1)
 
     if opt.load_path:
         print(f'=> resuming from {opt.load_path}')
@@ -230,14 +240,16 @@ def main():
     g_loss_history = RunningStats(opt.dynamic_reset_window)
     d_loss_history = RunningStats(opt.dynamic_reset_window)
 
+    grow_steps = [int(1.3 * opt.grow_step ** i) for i in range(1, opt.n_resnet - 1)]
+    opt.max_search_iter = sum(grow_steps)
+
     for search_iter in tqdm(range(int(start_search_iter), int(opt.max_search_iter))):
         tqdm.write(f"<start search iteration {search_iter}>")
         cycle_controller.reset()
 
-        if (search_iter + 1) % opt.grow_step == 0:
-            cur_stage = grow_ctrler.cur_stage(search_iter)
+        if search_iter in grow_steps:
+            cur_stage = grow_ctrler.cur_stage(search_iter + 1)
             tqdm.write(f'=> grow to stage {cur_stage}')
-
             prev_archs_A, prev_hiddens_A = cycle_controller.get_topk_arch_hidden_A()
             prev_archs_B, prev_hiddens_B = cycle_controller.get_topk_arch_hidden_B()
 
@@ -270,6 +282,7 @@ def main():
     final_archs_B, _ = cycle_controller.get_topk_arch_hidden_B()
     print(f"discovered archs: {final_archs_A}")
     print(f"discovered archs: {final_archs_B}")
+
 
 if __name__ == '__main__':
     main()

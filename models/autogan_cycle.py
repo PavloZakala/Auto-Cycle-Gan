@@ -52,7 +52,7 @@ class AutoResnetBlock(nn.Module):
             self.skip_ins = [0] * self.num_skip_in
             for skip_idx, (skip_in, skip_type) in enumerate(zip(decimal2binaryGray(skip_ins)[::-1],
                                                               decimal2binaryGray(skip_types)[::-1])):
-                if skip_in != 0:
+                if int(skip_in) != 0:
                     self.skip_ins[-(skip_idx + 1)] = int(skip_type) + 1
 
     def forward(self, x, skip_ft=None):
@@ -63,9 +63,9 @@ class AutoResnetBlock(nn.Module):
             assert len(self.skip_in_ops) == len(self.skip_ins)
             for skip_flag, ft, skip_in_op in zip(self.skip_ins, skip_ft, self.skip_in_ops):
                 if skip_flag == 1:
-                    residual += ft
+                    residual = residual + ft
                 elif skip_flag == 2:
-                    residual += skip_in_op(ft)
+                    residual = residual + skip_in_op(ft)
 
         return self.relu(x + self.conv2(residual)), h
 
@@ -114,7 +114,7 @@ class AutoResnetGenerator(nn.Module):
         self.resnet_flow = []
         mult = 2 ** n_downsampling
         for i in range(n_blocks):  # add ResNet blocks
-            self.resnet_flow += [AutoResnetBlock(ngf * mult, num_skip_in=0, padding_type=padding_type,
+            self.resnet_flow += [AutoResnetBlock(ngf * mult, num_skip_in=i, padding_type=padding_type,
                                                  norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
 
         self.resnet_flow = nn.ModuleList(self.resnet_flow)
