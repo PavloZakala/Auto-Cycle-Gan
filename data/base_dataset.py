@@ -88,7 +88,7 @@ def get_transform(opt, params=None, grayscale=False, method=Image.BICUBIC, conve
     elif 'scale_width' in opt.preprocess:
         transform_list.append(transforms.Lambda(lambda img: __scale_width(img, opt.load_size, opt.crop_size, method)))
 
-    if 'crop' in opt.preprocess:
+    if 'crop' in opt.preprocess and not opt.valid:
         if params is None:
             transform_list.append(transforms.RandomCrop(opt.crop_size))
         else:

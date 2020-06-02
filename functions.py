@@ -34,7 +34,6 @@ def train_shared(args,
                  train_loader,
                  prev_hiddens=None,
                  prev_archs=None):
-
     dynamic_reset = False
     logger.info('=> train shared GAN...')
     step = 0
@@ -51,6 +50,7 @@ def train_shared(args,
 
             # sample an arch
             arch = controller.sample(1, prev_hiddens=prev_hiddens, prev_archs=prev_archs, cpu=args.cpu)[0][0]
+
             gen_net.set_arch(arch, controller.cur_stage)
             dis_net.cur_stage = controller.cur_stage
             # Adversarial ground truths

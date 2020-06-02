@@ -4,5 +4,4 @@
 /datasets/
 /fid_stat/
 /logs_eval/
-/pre_mod/
 *.pyc

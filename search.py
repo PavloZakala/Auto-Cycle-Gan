@@ -204,7 +204,4 @@ def main():
 
 
 if __name__ == '__main__':
-    import numpy as np
-    data = np.load("fid_stat/fid_stats_cifar10_train.npz")
-
     main()

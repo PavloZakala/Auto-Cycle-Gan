@@ -1,7 +1,10 @@
 import os
-import torch
-from collections import OrderedDict
 from abc import ABC, abstractmethod
+from collections import OrderedDict
+
+import torch
+from tqdm import tqdm
+
 from . import networks
 
 
@@ -41,10 +44,10 @@ class BaseModel(ABC):
         self.loss_names = []
         self.model_names = []
         self.visual_names = []
+        self.optimizers_names = []
         self.optimizers = []
         self.image_paths = []
         self.metric = 0  # used for learning rate policy 'plateau'
-
 
     @staticmethod
     def modify_commandline_options(parser, is_train):
@@ -98,6 +101,13 @@ class BaseModel(ABC):
                 net = getattr(self, 'net' + name)
                 net.eval()
 
+    def train(self):
+        """Make models eval mode during test time"""
+        for name in self.model_names:
+            if isinstance(name, str):
+                net = getattr(self, 'net' + name)
+                net.train()
+
     def test(self):
         """Forward function used in test time.
 
@@ -140,7 +150,8 @@ class BaseModel(ABC):
         errors_ret = OrderedDict()
         for name in self.loss_names:
             if isinstance(name, str):
-                errors_ret[name] = float(getattr(self, 'loss_' + name))  # float(...) works for both scalar tensor and float number
+                errors_ret[name] = float(
+                    getattr(self, 'loss_' + name))  # float(...) works for both scalar tensor and float number
         return errors_ret
 
     def save_networks(self, epoch):
@@ -149,6 +160,8 @@ class BaseModel(ABC):
         Parameters:
             epoch (int) -- current epoch; used in the file name '%s_net_%s.pth' % (epoch, name)
         """
+        opt_dict = {"network": {},
+                    "optimizer": {}}
         for name in self.model_names:
             if isinstance(name, str):
                 save_filename = '%s_net_%s.pth' % (epoch, name)
@@ -156,10 +169,24 @@ class BaseModel(ABC):
                 net = getattr(self, 'net' + name)
 
                 if len(self.gpu_ids) > 0 and torch.cuda.is_available():
-                    torch.save(net.cpu().state_dict(), save_path)
+                    opt_dict["network"][name] = net.cpu().state_dict()
+                    torch.save(opt_dict["network"][name], save_path)
                     net.cuda()
                 else:
-                    torch.save(net.cpu().state_dict(), save_path)
+                    opt_dict["network"][name] = net.cpu().state_dict()
+                    torch.save(opt_dict["network"][name], save_path)
+
+        for name in self.optimizers_names:
+            if isinstance(name, str):
+                optimizer = getattr(self, 'optimizer' + name)
+
+                if len(self.gpu_ids) > 0 and torch.cuda.is_available():
+                    opt_dict["optimizer"][name] = optimizer.state_dict()
+                    optimizer.cuda()
+                else:
+                    opt_dict["optimizer"][name] = optimizer.state_dict()
+
+        return opt_dict
 
     def __patch_instance_norm_state_dict(self, state_dict, module, keys, i=0):
         """Fix InstanceNorm checkpoints incompatibility (prior to 0.4)"""
@@ -170,10 +197,30 @@ class BaseModel(ABC):
                 if getattr(module, key) is None:
                     state_dict.pop('.'.join(keys))
             if module.__class__.__name__.startswith('InstanceNorm') and \
-               (key == 'num_batches_tracked'):
+                    (key == 'num_batches_tracked'):
                 state_dict.pop('.'.join(keys))
         else:
             self.__patch_instance_norm_state_dict(state_dict, getattr(module, key), keys, i + 1)
+
+    def load_from_state(self, opt_state_dict):
+
+        for name in self.model_names:
+            if isinstance(name, str):
+                net = getattr(self, 'net' + name)
+                tqdm.write('loading the model from %s' % name)
+                state_dict = opt_state_dict["network"][name]
+                if hasattr(state_dict, '_metadata'):
+                    del state_dict._metadata
+
+                for key in list(state_dict.keys()):  # need to copy keys here because we mutate in loop
+                    self.__patch_instance_norm_state_dict(state_dict, net, key.split('.'))
+                net.load_state_dict(state_dict)
+
+        for name in self.optimizers_names:
+            if isinstance(name, str):
+                optimizer = getattr(self, 'optimizer' + name)
+                state_dict = opt_state_dict["optimizer"][name]
+                optimizer.load_state_dict(state_dict)
 
     def load_networks(self, epoch):
         """Load all the networks from the disk.
@@ -206,7 +253,7 @@ class BaseModel(ABC):
         Parameters:
             verbose (bool) -- if verbose: print the network architecture
         """
-        self.opt.logger.info('---------- Networks initialized -------------')
+        print('---------- Networks initialized -------------')
         for name in self.model_names:
             if isinstance(name, str):
                 net = getattr(self, 'net' + name)
@@ -214,9 +261,9 @@ class BaseModel(ABC):
                 for param in net.parameters():
                     num_params += param.numel()
                 if verbose:
-                    self.opt.logger.info(net)
-                self.opt.logger.info('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
-        self.opt.logger.info('-----------------------------------------------')
+                    print(net)
+                print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
+        print('-----------------------------------------------')
 
     def set_requires_grad(self, nets, requires_grad=False):
         """Set requies_grad=Fasle for all the networks to avoid unnecessary computations

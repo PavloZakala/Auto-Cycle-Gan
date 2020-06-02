@@ -6,12 +6,13 @@ import math
 import os
 import time
 from datetime import datetime
-from torchvision.utils import make_grid
 
 import dateutil.tz
 import numpy as np
 import torch
 from PIL import Image
+from torch import nn
+from torchvision.utils import make_grid
 
 
 def create_logger(log_dir, phase='train'):
@@ -209,6 +210,7 @@ def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+
 def save_current_results(args, visuals, ep):
     ncols = min(4, len(visuals))
     b = min(next(iter(visuals.values())).shape[0], 64)
@@ -219,6 +221,33 @@ def save_current_results(args, visuals, ep):
     for label, image_set in visuals.items():
         name = "{}_{}.jpg".format(ep, label)
         save_path = os.path.join(save_dir, name)
-        image_grid = make_grid(image_set,nrow=row)
+        image_grid = make_grid(image_set, nrow=row)
         image_numpy = tensor2im(image_grid.unsqueeze(0))
         save_image(image_numpy, save_path)
+
+
+def load_saves(net, epoch, name, save_dir, device=torch.device('cpu')):
+    def __patch_instance_norm_state_dict(state_dict, module, keys, i=0):
+        """Fix InstanceNorm checkpoints incompatibility (prior to 0.4)"""
+        key = keys[i]
+        if i + 1 == len(keys):  # at the end, pointing to a parameter/buffer
+            if module.__class__.__name__.startswith('InstanceNorm') and \
+                    (key == 'running_mean' or key == 'running_var'):
+                if getattr(module, key) is None:
+                    state_dict.pop('.'.join(keys))
+            if module.__class__.__name__.startswith('InstanceNorm') and \
+                    (key == 'num_batches_tracked'):
+                state_dict.pop('.'.join(keys))
+        else:
+            __patch_instance_norm_state_dict(state_dict, getattr(module, key), keys, i + 1)
+
+    load_filename = '%s_net_%s.pth' % (epoch, name)
+    load_path = os.path.join(save_dir, load_filename)
+
+    state_dict = torch.load(load_path, map_location=str(device))
+    if hasattr(state_dict, '_metadata'):
+        del state_dict._metadata
+
+    for key in list(state_dict.keys()):  # need to copy keys here because we mutate in loop
+        __patch_instance_norm_state_dict(state_dict, net, key.split('.'))
+    net.load_state_dict(state_dict)

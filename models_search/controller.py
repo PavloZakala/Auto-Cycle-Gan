@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models_search.building_blocks_search import CONV_TYPE, NORM_TYPE, UP_TYPE, SHORT_CUT_TYPE, SKIP_TYPE
+from models_search.building_blocks_search import SKIP_TYPE, SKIP_OP_TYPE
 
 
 class Controller(nn.Module):
@@ -22,10 +22,9 @@ class Controller(nn.Module):
         self.hid_size = args.hid_size
         self.cur_stage = cur_stage
         self.lstm = torch.nn.LSTMCell(self.hid_size, self.hid_size)
-        if cur_stage:
-            self.tokens = [len(CONV_TYPE), len(NORM_TYPE), len(UP_TYPE), len(SHORT_CUT_TYPE), len(SKIP_TYPE)**cur_stage]
-        else:
-            self.tokens = [len(CONV_TYPE), len(NORM_TYPE), len(UP_TYPE), len(SHORT_CUT_TYPE)]
+
+        self.tokens = [len(SKIP_TYPE)**cur_stage, len(SKIP_OP_TYPE)**cur_stage]
+
         self.encoder = nn.Embedding(sum(self.tokens), self.hid_size)
         self.decoders = nn.ModuleList([nn.Linear(self.hid_size, token) for token in self.tokens])
 

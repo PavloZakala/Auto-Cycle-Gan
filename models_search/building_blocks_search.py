@@ -13,10 +13,14 @@ NORM_TYPE = {0: None, 1: 'bn', 2: 'in'}
 UP_TYPE = {0: 'bilinear', 1: 'nearest', 2: 'deconv'}
 SHORT_CUT_TYPE = {0: False, 1: True}
 SKIP_TYPE = {0: False, 1: True}
-DOWN_TYPE = {0: 'maxpool', 1:"avgpool"}
+DOWN_TYPE = {0: 'maxpool', 1: "avgpool"}
+SKIP_OP_TYPE = {0: 'conv', 1: "identity"}
 
 def decimal2binary(n):
     return bin(n).replace("0b", "")
+
+def decimal2binaryGray(n):
+    return decimal2binary(n ^ n >> 1)
 
 
 class PreGenBlock(nn.Module):
@@ -134,7 +138,7 @@ class Cell(nn.Module):
         self.pre_conv2.set_arch(up_id, norm_id)
 
         if self.num_skip_in:
-            self.skip_ins = [0 for _ in range(self.num_skip_in)]
+            self.skip_ins = [0] * self.num_skip_in
             for skip_idx, skip_in in enumerate(decimal2binary(skip_ins)[::-1]):
                 self.skip_ins[-(skip_idx + 1)] = int(skip_in)
 
@@ -376,3 +380,7 @@ class DisBlock(nn.Module):
 
     def forward(self, x):
         return self.residual(x) + self.shortcut(x)
+
+if __name__ == '__main__':
+    for i in range(10):
+        print(decimal2binaryGray(i))

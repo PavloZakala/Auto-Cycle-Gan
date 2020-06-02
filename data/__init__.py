@@ -45,7 +45,7 @@ def get_option_setter(dataset_name):
     return dataset_class.modify_commandline_options
 
 
-def create_dataset(opt):
+def create_dataset(opt, valid=False):
     """Create a dataset given the option.
 
     This function wraps the class CustomDatasetDataLoader.
@@ -55,6 +55,7 @@ def create_dataset(opt):
         >>> from data import create_dataset
         >>> dataset = create_dataset(opt)
     """
+    opt.valid = valid
     data_loader = CustomDatasetDataLoader(opt)
     dataset = data_loader.load_data()
     return dataset
