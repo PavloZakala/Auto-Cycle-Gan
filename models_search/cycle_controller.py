@@ -99,7 +99,7 @@ class CycleControllerModel(BaseModel):
 
         if len(self.gpu_ids) != 0:
             self.netC_A.cuda()
-            self.netC_A.cuda()
+            self.netC_B.cuda()
 
             self.netD_A.cuda()
             self.netD_B.cuda()
