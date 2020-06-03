@@ -78,7 +78,7 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
 
             if (i + 1) % opt.display_freq == 0:
                 cycle_gan.compute_visuals()
-                save_current_results(opt, cycle_gan.get_current_visuals(), epoch)
+                save_current_results(opt, cycle_gan.get_current_visuals(), train_steps)
 
             if g_loss_history.is_full():
                 if g_loss_history.get_var() < opt.dynamic_reset_threshold \

@@ -2,6 +2,7 @@ import operator
 
 import numpy as np
 import torch
+import os
 
 from data import create_dataset
 from models import networks
@@ -86,8 +87,8 @@ class CycleControllerModel(BaseModel):
 
         self.netD_A = networks.define_D(3, 64, "basic", norm='instance')
         self.netD_B = networks.define_D(3, 64, "basic", norm='instance')
-        load_saves(self.netD_A, "res", "D_A", "pre_mod")
-        load_saves(self.netD_B, "res", "D_B", "pre_mod")
+        load_saves(self.netD_A, "res", "D_A", os.path.join(opt.path, "pre_mod"))
+        load_saves(self.netD_B, "res", "D_B", os.path.join(opt.path, "pre_mod"))
         self.loss = networks.GANLoss("lsgan")
 
         self.prev_hiddens_A = None

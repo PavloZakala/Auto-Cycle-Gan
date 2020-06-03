@@ -38,4 +38,5 @@ class SearchOptions(TrainOptions):
                             help='frequency of showing training results on console')
         parser.add_argument('--num_candidate', type=int, default=10,
                             help='number of candidate architectures to be sampled')
+        parser.add_argument('--path', type=str, help='number of candidate architectures to be sampled')
         return parser
