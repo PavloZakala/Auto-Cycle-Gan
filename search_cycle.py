@@ -76,7 +76,7 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
                     message += '[%s: %.3f]' % (k, v)
                 tqdm.write(message)
 
-            if (i + 1) % opt.display_freq == 0:
+            if (total_iters + 1) % opt.display_freq == 0:
                 cycle_gan.compute_visuals()
                 save_current_results(opt, cycle_gan.get_current_visuals(), train_steps)
 
@@ -89,7 +89,7 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
                     d_loss_history.clear()
                     return dynamic_reset
 
-            if (i + 1) % opt.save_latest_freq == 0:  # cache our latest model every <save_latest_freq> iterations
+            if (total_iters + 1) % opt.save_latest_freq == 0:  # cache our latest model every <save_latest_freq> iterations
                 tqdm.write('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
                 save_suffix = 'latest'
                 cycle_gan.save_networks(save_suffix)
