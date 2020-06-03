@@ -52,8 +52,8 @@ class UnalignedDataset(BaseDataset):
         self.A_paths = [os.path.join(self.dir_A, name) for name, _ in dataA]
         self.B_paths = [os.path.join(self.dir_B, name) for name, _ in dataB]
 
-        self.A_size = max(len(self.A_images), opt.max_dataset_size)  # get the size of dataset A
-        self.B_size = max(len(self.B_images), opt.max_dataset_size)  # get the size of dataset B
+        self.A_size = min(len(self.A_images), int(opt.max_dataset_size))  # get the size of dataset A
+        self.B_size = min(len(self.B_images), int(opt.max_dataset_size))  # get the size of dataset B
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
