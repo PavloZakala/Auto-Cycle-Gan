@@ -120,6 +120,7 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
             "B": float(cycle_gan.loss_idt_B),
         }, train_steps)
 
+        writer_dict['train_steps'] += 1
         cycle_gan.update_learning_rate()
 
     return dynamic_reset
