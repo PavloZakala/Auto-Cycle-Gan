@@ -101,6 +101,10 @@ class CycleControllerModel(BaseModel):
             self.netC_A = self.netC_A.cuda()
             self.netC_A = self.netC_A.cuda()
 
+            self.netD_A = self.netD_A.cuda()
+            self.netD_B = self.netD_B.cuda()
+            self.loss = self.loss.cuda()
+
         networks.init_weights(self.netC_A, opt.init_type, opt.init_gain)
         networks.init_weights(self.netC_A, opt.init_type, opt.init_gain)
 
