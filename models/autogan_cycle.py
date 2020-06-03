@@ -5,7 +5,6 @@ import torch.nn as nn
 
 from models_search.building_blocks_search import decimal2binaryGray
 
-
 class AutoResnetBlock(nn.Module):
 
     def __init__(self, dim, padding_type, num_skip_in, norm_layer, use_dropout, use_bias, activation=nn.ReLU):
@@ -76,7 +75,7 @@ class AutoResnetGenerator(nn.Module):
     """
 
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6,
-                 padding_type='reflect'):
+                 padding_type='reflect', max_skip_num=3):
         """Construct a Resnet-based generator
 
         Parameters:
@@ -88,8 +87,10 @@ class AutoResnetGenerator(nn.Module):
             n_blocks (int)      -- the number of ResNet blocks
             padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
         """
+
         assert (n_blocks >= 0)
         self.cur_stage = 0
+        self.max_skip_num = max_skip_num
         super(AutoResnetGenerator, self).__init__()
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
@@ -114,7 +115,7 @@ class AutoResnetGenerator(nn.Module):
         self.resnet_flow = []
         mult = 2 ** n_downsampling
         for i in range(n_blocks):  # add ResNet blocks
-            self.resnet_flow += [AutoResnetBlock(ngf * mult, num_skip_in=i, padding_type=padding_type,
+            self.resnet_flow += [AutoResnetBlock(ngf * mult, num_skip_in=min(i, self.max_skip_num), padding_type=padding_type,
                                                  norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
 
         self.resnet_flow = nn.ModuleList(self.resnet_flow)
@@ -143,10 +144,8 @@ class AutoResnetGenerator(nn.Module):
             arch_id = arch_id.to('cpu').numpy().tolist()
         arch_id = [int(x) for x in arch_id]
 
-        assert len(arch_id) == (cur_stage) * NUM_ARCH
-
         self.cur_stage = cur_stage
-        for i in range(self.cur_stage):
+        for i in range(min(self.cur_stage, self.max_skip_num)):
             arch_stage = arch_id[i * NUM_ARCH:(i + 1) * NUM_ARCH]
             self.resnet_flow[i+1].set_arch(*arch_stage)
 
@@ -155,8 +154,11 @@ class AutoResnetGenerator(nn.Module):
         x = self.encode(input)
 
         hs = []
-        for res_block in self.resnet_flow[:self.cur_stage+1]:
+        for i, res_block in enumerate(self.resnet_flow[:self.cur_stage+1]):
             x, h = res_block(x, skip_ft=hs)
+
+            if i == self.max_skip_num:
+                hs.pop(0)
             hs.append(h)
 
         x = self.decode(x)

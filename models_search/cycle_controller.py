@@ -49,7 +49,7 @@ class CycleControllerModel(BaseModel):
 
                 conv_imgs = netG(imgs)
 
-                d = [float(loss(im.unsqueeze(0), True)) for im in conv_imgs]
+                d = [float(loss(netD(im.unsqueeze(0)), True)) for im in conv_imgs]
                 conv_imgs = conv_imgs.mul_(127.5).add_(127.5).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu',
                                                                                                         torch.uint8).numpy()
                 img_list.extend(list(conv_imgs))
@@ -57,8 +57,8 @@ class CycleControllerModel(BaseModel):
 
         mean_is, std_is = get_inception_score(img_list, splits=1)
 
-        mean_d = 1 / np.mean(ds)
-        std_d = 1 / np.std(ds)
+        mean_d = 1 / (np.mean(ds) + 0.00005)
+        std_d = 1 / (np.std(ds) + 0.00005)
 
         return mean_is, mean_d * 3.0
 
@@ -98,12 +98,12 @@ class CycleControllerModel(BaseModel):
         self.prev_archs_B = None
 
         if len(self.gpu_ids) != 0:
-            self.netC_A = self.netC_A.cuda()
-            self.netC_B = self.netC_A.cuda()
+            self.netC_A.cuda()
+            self.netC_A.cuda()
 
-            self.netD_A = self.netD_A.cuda()
-            self.netD_B = self.netD_B.cuda()
-            self.loss = self.loss.cuda()
+            self.netD_A.cuda()
+            self.netD_B.cuda()
+            self.loss.cuda()
 
         networks.init_weights(self.netC_A, opt.init_type, opt.init_gain)
         networks.init_weights(self.netC_A, opt.init_type, opt.init_gain)

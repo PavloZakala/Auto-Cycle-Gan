@@ -41,12 +41,14 @@ class CycleGANModel(BaseModel):
             self.model_names = ['G_A', 'G_B']
 
         self.netG_A = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
-                                        not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.n_resnet)
+                                        not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.n_resnet,
+                                        opt.max_skip_num)
         self.netG_B = networks.define_G(opt.output_nc, opt.input_nc, opt.ngf, opt.netG, opt.norm,
-                                        not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.n_resnet)
+                                        not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.n_resnet,
+                                        opt.max_skip_num)
         if len(self.gpu_ids) != 0:
-            self.netG_A = self.netG_A.cuda()
-            self.netG_B = self.netG_B.cuda()
+            self.netG_A.cuda()
+            self.netG_B.cuda()
 
         networks.init_weights(self.netG_A, opt.init_type, opt.init_gain)
         networks.init_weights(self.netG_B, opt.init_type, opt.init_gain)
@@ -57,8 +59,8 @@ class CycleGANModel(BaseModel):
             self.netD_B = networks.define_D(opt.input_nc, opt.ndf, opt.netD,
                                             opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
             if len(self.gpu_ids) != 0:
-                self.netD_A = self.netD_A.cuda()
-                self.netD_B = self.netD_B.cuda()
+                self.netD_A.cuda()
+                self.netD_B.cuda()
 
         if self.isTrain:
             if opt.lambda_identity > 0.0:  # only works when input and output images have the same number of channels
@@ -68,7 +70,7 @@ class CycleGANModel(BaseModel):
             # define loss functions
             self.criterionGAN = networks.GANLoss(opt.gan_mode)  # define GAN loss.
             if len(opt.gpu_ids) != 0:
-                self.criterionGAN = self.criterionGAN.cuda()
+                self.criterionGAN.cuda()
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
 

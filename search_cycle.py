@@ -181,7 +181,7 @@ def controller_train(opt, cycle_gan: CycleGANModel,
         }, controller_step)
 
         writer_dict['controller_steps'] = controller_step + 1
-
+        cycle_controller.update_learning_rate()
 
 MODEL_DIR = 'D:\\imagenet'
 
@@ -240,7 +240,8 @@ def main():
     g_loss_history = RunningStats(opt.dynamic_reset_window)
     d_loss_history = RunningStats(opt.dynamic_reset_window)
 
-    grow_steps = [int(1.3 * opt.grow_step ** i) for i in range(1, opt.n_resnet - 1)]
+    grow_steps = [int(opt.grow_step ** i) for i in range(1, opt.max_skip_num)] + \
+                 [int(opt.grow_step ** 3) for _ in range(1, opt.n_resnet - opt.max_skip_num)]
     opt.max_search_iter = sum(grow_steps)
 
     for search_iter in tqdm(range(int(start_search_iter), int(opt.max_search_iter))):
