@@ -179,12 +179,7 @@ class BaseModel(ABC):
         for name in self.optimizers_names:
             if isinstance(name, str):
                 optimizer = getattr(self, 'optimizer' + name)
-
-                if len(self.gpu_ids) > 0 and torch.cuda.is_available():
-                    opt_dict["optimizer"][name] = optimizer.state_dict()
-                    optimizer.cuda()
-                else:
-                    opt_dict["optimizer"][name] = optimizer.state_dict()
+                opt_dict["optimizer"][name] = optimizer.state_dict()
 
         return opt_dict
 
