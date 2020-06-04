@@ -19,8 +19,9 @@ SKIP_OP_TYPE = {0: 'conv', 1: "identity"}
 def decimal2binary(n):
     return bin(n).replace("0b", "")
 
-def decimal2binaryGray(n):
-    return decimal2binary(n ^ n >> 1)
+def decimal2binaryGray(n, len_num):
+    bst = decimal2binary(n ^ n >> 1)
+    return "0" * (len_num-len(bst)) + bst
 
 
 class PreGenBlock(nn.Module):

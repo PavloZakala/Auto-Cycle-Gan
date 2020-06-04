@@ -49,8 +49,8 @@ class AutoResnetBlock(nn.Module):
     def set_arch(self, skip_ins, skip_types):
         if self.num_skip_in:
             self.skip_ins = [0] * self.num_skip_in
-            for skip_idx, (skip_in, skip_type) in enumerate(zip(decimal2binaryGray(skip_ins)[::-1],
-                                                              decimal2binaryGray(skip_types)[::-1])):
+            for skip_idx, (skip_in, skip_type) in enumerate(zip(decimal2binaryGray(skip_ins, self.num_skip_in)[::-1],
+                                                              decimal2binaryGray(skip_types, self.num_skip_in)[::-1])):
                 if int(skip_in) != 0:
                     self.skip_ins[-(skip_idx + 1)] = int(skip_type) + 1
 
@@ -145,7 +145,7 @@ class AutoResnetGenerator(nn.Module):
         arch_id = [int(x) for x in arch_id]
 
         self.cur_stage = cur_stage
-        for i in range(min(self.cur_stage, self.max_skip_num)):
+        for i in range(self.cur_stage):
             arch_stage = arch_id[i * NUM_ARCH:(i + 1) * NUM_ARCH]
             self.resnet_flow[i+1].set_arch(*arch_stage)
 

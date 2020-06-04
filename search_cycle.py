@@ -242,7 +242,7 @@ def main():
     d_loss_history = RunningStats(opt.dynamic_reset_window)
 
     grow_steps = [int(opt.grow_step ** i) for i in range(1, opt.max_skip_num)] + \
-                 [int(opt.grow_step ** 3) for _ in range(1, opt.n_resnet - opt.max_skip_num)]
+                 [int(opt.grow_step ** 3) for _ in range(1, opt.n_resnet - opt.max_skip_num + 1)]
     opt.max_search_iter = sum(grow_steps)
 
     for search_iter in tqdm(range(int(start_search_iter), int(opt.max_search_iter))):

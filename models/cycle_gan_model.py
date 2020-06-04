@@ -83,6 +83,11 @@ class CycleGANModel(BaseModel):
             self.optimizers.append(self.optimizerG)
             self.optimizers.append(self.optimizerD)
 
+    def set_arch(self, arch, cur_stage):
+
+        self.netG_A.set_arch(arch, cur_stage)
+        self.netG_B.set_arch(arch, cur_stage)
+
     def set_input(self, input):
 
         AtoB = self.opt.direction == 'AtoB'
