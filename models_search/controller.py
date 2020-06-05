@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models_search.building_blocks_search import SKIP_TYPE, SKIP_OP_TYPE
+from models_search.building_blocks_search import SKIP_TYPE, SKIP_OP_TYPE,CONV_TYPE, NORM_TYPE, UP_TYPE, SHORT_CUT_TYPE
 
 
 class Controller(nn.Module):
@@ -25,6 +25,11 @@ class Controller(nn.Module):
 
         self.tokens = [len(SKIP_TYPE)**min(args.max_skip_num, cur_stage),
                        len(SKIP_OP_TYPE)**min(args.max_skip_num, cur_stage)]
+        # if cur_stage:
+        #     self.tokens = [len(CONV_TYPE), len(NORM_TYPE), len(UP_TYPE), len(SHORT_CUT_TYPE),
+        #                    len(SKIP_TYPE) ** cur_stage]
+        # else:
+        #     self.tokens = [len(CONV_TYPE), len(NORM_TYPE), len(UP_TYPE), len(SHORT_CUT_TYPE)]
 
         self.encoder = nn.Embedding(sum(self.tokens), self.hid_size)
         self.decoders = nn.ModuleList([nn.Linear(self.hid_size, token) for token in self.tokens])

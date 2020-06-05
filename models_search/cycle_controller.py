@@ -160,6 +160,18 @@ class CycleControllerModel(BaseModel):
         self.netD_B.cuda()
         self.loss.cuda()
 
+        if self.prev_archs_A:
+            self.prev_archs_A = [n.cuda() for n in self.prev_archs_A]
+
+        if self.prev_archs_A:
+            self.prev_archs_A = [n.cuda() for n in self.prev_archs_A]
+
+        if self.prev_hiddens_A:
+            self.prev_hiddens_A = ([n.cuda() for n in self.prev_hiddens_A[0]],
+                                   [n.cuda() for n in self.prev_hiddens_A[1]])
+        if self.prev_hiddens_B:
+            self.prev_hiddens_B = ([n.cuda() for n in self.prev_hiddens_B[0]],
+                                   [n.cuda() for n in self.prev_hiddens_B[1]])
     def save_networks(self, epoch):
         state_dict = super().save_networks(epoch)
         state_dict["prev_hiddens_A"] = self.prev_hiddens_A
