@@ -263,7 +263,7 @@ def train_controller(args, controller, ctrl_optimizer, gen_net, prev_hiddens, pr
             # policy loss
             loss = -selected_log_probs * adv
             loss = loss.sum()
-
+            print(loss)
             # update controller
             ctrl_optimizer.zero_grad()
             loss.backward()

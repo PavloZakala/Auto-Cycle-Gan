@@ -38,7 +38,7 @@ def set_log_dir(root_dir, exp_name):
     exp_path = os.path.join(root_dir, exp_name)
     now = datetime.now(dateutil.tz.tzlocal())
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
-    prefix = exp_path + '_' + timestamp
+    prefix = exp_path
     os.makedirs(prefix)
     path_dict['prefix'] = prefix
 

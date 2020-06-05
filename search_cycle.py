@@ -92,13 +92,13 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
             if (total_iters + 1) % opt.save_latest_freq == 0:  # cache our latest model every <save_latest_freq> iterations
                 tqdm.write('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
                 save_suffix = 'latest'
-                cycle_gan.save_networks(save_suffix)
+                cycle_gan.save_networks(train_steps)
 
             iter_data_time = time.time()
 
         if (epoch + 1) % opt.save_epoch_freq == 0:
             cycle_gan.save_networks('latest')
-            cycle_gan.save_networks(epoch)
+            cycle_gan.save_networks(train_steps)
 
         tqdm.write('End of epoch %d / %d \t Time Taken: %d sec' % (
             epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))
@@ -261,8 +261,8 @@ def main():
             cycle_controller.setup(opt)
             cycle_controller.set(cycle_gan, prev_hiddens_A, prev_hiddens_B, prev_archs_A, prev_archs_B)
 
-        dynamic_reset = cyclgan_train(opt, cycle_gan, cycle_controller, dataset,
-                                      g_loss_history, d_loss_history, writer_dict)
+        # dynamic_reset = cyclgan_train(opt, cycle_gan, cycle_controller, dataset,
+        #                               g_loss_history, d_loss_history, writer_dict)
 
         controller_train(opt, cycle_gan, cycle_controller, writer_dict)
 
