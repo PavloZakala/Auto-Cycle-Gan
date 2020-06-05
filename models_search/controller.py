@@ -93,7 +93,10 @@ class Controller(nn.Module):
         entropies = torch.cat(entropies, 0)  # bs * 1
 
         if prev_hiddens:
-            archs = torch.cat([selected_archs, archs], -1)
+            if not cpu:
+                archs = torch.cat([selected_archs.cuda(), archs], -1)
+            else:
+                archs = torch.cat([selected_archs, archs], -1)
 
         if with_hidden:
             return archs, selected_log_probs, entropies, hidden
