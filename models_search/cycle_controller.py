@@ -98,12 +98,7 @@ class CycleControllerModel(BaseModel):
         self.prev_archs_B = None
 
         if len(self.gpu_ids) != 0:
-            self.netC_A.cuda()
-            self.netC_B.cuda()
-
-            self.netD_A.cuda()
-            self.netD_B.cuda()
-            self.loss.cuda()
+            self.cuda()
 
         networks.init_weights(self.netC_A, opt.init_type, opt.init_gain)
         networks.init_weights(self.netC_A, opt.init_type, opt.init_gain)
@@ -156,6 +151,14 @@ class CycleControllerModel(BaseModel):
                                   cpu=len(self.gpu_ids) == 0)[0][0]
 
         self.netG_B.set_arch(arch, self.netC_B.cur_stage)
+
+    def cuda(self):
+        self.netC_A.cuda()
+        self.netC_B.cuda()
+
+        self.netD_A.cuda()
+        self.netD_B.cuda()
+        self.loss.cuda()
 
     def save_networks(self, epoch):
         state_dict = super().save_networks(epoch)
