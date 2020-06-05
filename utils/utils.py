@@ -39,23 +39,25 @@ def set_log_dir(root_dir, exp_name):
     now = datetime.now(dateutil.tz.tzlocal())
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
     prefix = exp_path
+
+    path_dict['prefix'] = prefix
+
+    ckpt_path = os.path.join(prefix, 'Model')
+    path_dict['ckpt_path'] = ckpt_path
+
+    log_path = os.path.join(prefix, 'Log')
+    path_dict['log_path'] = log_path
+
+    sample_path = os.path.join(prefix, 'Samples')
+    path_dict['sample_path'] = sample_path
+
     if not os.path.exists(prefix):
         os.makedirs(prefix)
-        path_dict['prefix'] = prefix
 
         # set checkpoint path
-        ckpt_path = os.path.join(prefix, 'Model')
         os.makedirs(ckpt_path)
-        path_dict['ckpt_path'] = ckpt_path
-
-        log_path = os.path.join(prefix, 'Log')
         os.makedirs(log_path)
-        path_dict['log_path'] = log_path
-
-        # set sample image path for fid calculation
-        sample_path = os.path.join(prefix, 'Samples')
         os.makedirs(sample_path)
-        path_dict['sample_path'] = sample_path
 
     return path_dict
 
