@@ -54,9 +54,13 @@ def set_log_dir(root_dir, exp_name):
     if not os.path.exists(prefix):
         os.makedirs(prefix)
 
-        # set checkpoint path
+    if not os.path.exists(ckpt_path):
         os.makedirs(ckpt_path)
+
+    if not os.path.exists(log_path):
         os.makedirs(log_path)
+
+    if not os.path.exists(sample_path):
         os.makedirs(sample_path)
 
     return path_dict
