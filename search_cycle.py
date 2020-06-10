@@ -261,8 +261,8 @@ def main():
             cycle_controller.setup(opt)
             cycle_controller.set(cycle_gan, prev_hiddens_A, prev_hiddens_B, prev_archs_A, prev_archs_B)
 
-        # dynamic_reset = cyclgan_train(opt, cycle_gan, cycle_controller, dataset,
-        #                               g_loss_history, d_loss_history, writer_dict)
+        dynamic_reset = cyclgan_train(opt, cycle_gan, cycle_controller, dataset,
+                                      g_loss_history, d_loss_history, writer_dict)
 
         controller_train(opt, cycle_gan, cycle_controller, writer_dict)
 

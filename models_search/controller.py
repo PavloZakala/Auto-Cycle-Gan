@@ -69,7 +69,10 @@ class Controller(nn.Module):
                 selected_hxs.append(prev_hxs[s_idx].unsqueeze(0))
                 selected_cxs.append(prev_cxs[s_idx].unsqueeze(0))
             selected_archs = torch.cat(selected_archs, 0)
-            hidden = (torch.cat(selected_hxs, 0), torch.cat(selected_cxs, 0))
+            if not cpu:
+                hidden = (torch.cat(selected_hxs, 0).cuda(), torch.cat(selected_cxs, 0).cuda())
+            else:
+                hidden = (torch.cat(selected_hxs, 0), torch.cat(selected_cxs, 0))
         else:
             hidden = (self.initHidden(batch_size, cpu), self.initHidden(batch_size, cpu))
         entropies = []
@@ -93,10 +96,7 @@ class Controller(nn.Module):
         entropies = torch.cat(entropies, 0)  # bs * 1
 
         if prev_hiddens:
-            if not cpu:
-                archs = torch.cat([selected_archs.cuda(), archs], -1)
-            else:
-                archs = torch.cat([selected_archs, archs], -1)
+            archs = torch.cat([selected_archs, archs], -1)
 
         if with_hidden:
             return archs, selected_log_probs, entropies, hidden

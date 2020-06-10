@@ -108,6 +108,13 @@ def main():
     writer_dict = {"writer": SummaryWriter(opt.path_helper['log_path']),
                    'train_steps': 0}
 
+    # for i, data in tqdm(enumerate(dataset)):
+    #     cycle_gan.set_input(data)
+    #     cycle_gan.forward()
+    #     cycle_gan.compute_visuals()
+    #     save_current_results(opt, cycle_gan.get_current_visuals(), i)
+
+
     cyclgan_train(opt, cycle_gan, dataset, writer_dict)
 
 

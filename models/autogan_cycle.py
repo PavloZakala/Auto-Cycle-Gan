@@ -5,10 +5,10 @@ import torch.nn as nn
 
 from models_search.building_blocks_search import decimal2binaryGray
 
-class AutoResnetBlock(nn.Module):
+class ConvCell(nn.Module):
 
     def __init__(self, dim, padding_type, num_skip_in, norm_layer, use_dropout, use_bias, activation=nn.ReLU):
-        super(AutoResnetBlock, self).__init__()
+        super(ConvCell, self).__init__()
 
         conv_block = []
         p = 0
@@ -115,8 +115,8 @@ class AutoResnetGenerator(nn.Module):
         self.resnet_flow = []
         mult = 2 ** n_downsampling
         for i in range(n_blocks):  # add ResNet blocks
-            self.resnet_flow += [AutoResnetBlock(ngf * mult, num_skip_in=min(i, self.max_skip_num), padding_type=padding_type,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
+            self.resnet_flow += [ConvCell(ngf * mult, num_skip_in=min(i, self.max_skip_num), padding_type=padding_type,
+                                          norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
 
         self.resnet_flow = nn.ModuleList(self.resnet_flow)
 
