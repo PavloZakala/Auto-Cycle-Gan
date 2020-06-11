@@ -147,6 +147,7 @@ class AutoResnetGenerator(nn.Module):
         self.cur_stage = cur_stage
         for i in range(self.cur_stage):
             arch_stage = arch_id[i * NUM_ARCH:(i + 1) * NUM_ARCH]
+            print(arch_stage)
             self.resnet_flow[i+1].set_arch(*arch_stage)
 
     def forward(self, input):
