@@ -112,7 +112,7 @@ class CycleControllerModel(BaseModel):
         self.optimizers.append(self.optimizerA)
         self.optimizers.append(self.optimizerB)
 
-        self.valid_dataloader = create_dataset(opt)
+        self.valid_dataloader = create_dataset(opt, valid=True)
         self.baseline_decay = opt.baseline_decay
         self.entropy_coeff = opt.entropy_coeff
 
