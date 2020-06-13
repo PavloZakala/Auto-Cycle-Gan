@@ -172,8 +172,8 @@ class CycleControllerModel(BaseModel):
         if self.prev_hiddens_B:
             self.prev_hiddens_B = ([n.cuda() for n in self.prev_hiddens_B[0]],
                                    [n.cuda() for n in self.prev_hiddens_B[1]])
-    def save_networks(self, epoch):
-        state_dict = super().save_networks(epoch)
+    def save_networks(self, epoch, save=False):
+        state_dict = super().save_networks(epoch, save)
         state_dict["prev_hiddens_A"] = self.prev_hiddens_A
         state_dict["prev_hiddens_B"] = self.prev_hiddens_B
 
