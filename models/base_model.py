@@ -154,7 +154,7 @@ class BaseModel(ABC):
                     getattr(self, 'loss_' + name))  # float(...) works for both scalar tensor and float number
         return errors_ret
 
-    def save_networks(self, epoch):
+    def save_networks(self, epoch, save=True):
         """Save all the networks to the disk.
 
         Parameters:
@@ -167,14 +167,14 @@ class BaseModel(ABC):
                 save_filename = '%s_net_%s.pth' % (epoch, name)
                 save_path = os.path.join(self.save_dir, save_filename)
                 net = getattr(self, 'net' + name)
-
-                if len(self.gpu_ids) > 0 and torch.cuda.is_available():
-                    opt_dict["network"][name] = net.cpu().state_dict()
-                    torch.save(opt_dict["network"][name], save_path)
-                    net.cuda()
-                else:
-                    opt_dict["network"][name] = net.cpu().state_dict()
-                    torch.save(opt_dict["network"][name], save_path)
+                if save:
+                    if len(self.gpu_ids) > 0 and torch.cuda.is_available():
+                        opt_dict["network"][name] = net.cpu().state_dict()
+                        torch.save(opt_dict["network"][name], save_path)
+                        net.cuda()
+                    else:
+                        opt_dict["network"][name] = net.cpu().state_dict()
+                        torch.save(opt_dict["network"][name], save_path)
 
         for name in self.optimizers_names:
             if isinstance(name, str):
