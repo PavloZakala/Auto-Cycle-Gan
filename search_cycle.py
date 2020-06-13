@@ -8,7 +8,7 @@ import time
 import torch
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
-
+from functools import reduce
 from data import create_dataset
 from models.cycle_gan_model import CycleGANModel
 from models_search.cycle_controller import CycleControllerModel
@@ -22,11 +22,15 @@ torch.backends.cudnn.benchmark = True
 
 
 class GrowCtrler(object):
-    def __init__(self, grow_step):
+    def __init__(self, grow_step, steps):
         self.grow_step = grow_step
+        self.step_points = steps
 
     def cur_stage(self, search_iter):
-        return search_iter // self.grow_step + 1
+
+        idx = self.step_points.index(search_iter)
+
+        return idx + 1
 
 
 def cyclgan_train(opt, cycle_gan: CycleGANModel,
@@ -198,7 +202,12 @@ def main():
     start_search_iter = 0
     cur_stage = 1
 
-    grow_ctrler = GrowCtrler(opt.grow_step)
+    delta_grow_steps = [int(opt.grow_step ** i) for i in range(1, opt.max_skip_num)] + \
+                       [int(opt.grow_step ** 3) for _ in range(1, opt.n_resnet - opt.max_skip_num + 1)]
+
+    grow_steps = [sum(delta_grow_steps[:i]) for i in range(len(delta_grow_steps))][1:]
+
+    grow_ctrler = GrowCtrler(opt.grow_step, steps=grow_steps)
 
     if opt.load_path:
         print(f'=> resuming from {opt.load_path}')
@@ -241,16 +250,14 @@ def main():
     g_loss_history = RunningStats(opt.dynamic_reset_window)
     d_loss_history = RunningStats(opt.dynamic_reset_window)
 
-    grow_steps = [int(opt.grow_step ** i) for i in range(1, opt.max_skip_num)] + \
-                 [int(opt.grow_step ** 3) for _ in range(1, opt.n_resnet - opt.max_skip_num + 1)]
     opt.max_search_iter = sum(grow_steps)
-
+    dynamic_reset = None
     for search_iter in tqdm(range(int(start_search_iter), int(opt.max_search_iter))):
         tqdm.write(f"<start search iteration {search_iter}>")
         cycle_controller.reset()
 
         if search_iter in grow_steps:
-            cur_stage = grow_ctrler.cur_stage(search_iter + 1)
+            cur_stage = grow_ctrler.cur_stage(search_iter) + 1
             tqdm.write(f'=> grow to stage {cur_stage}')
             prev_archs_A, prev_hiddens_A = cycle_controller.get_topk_arch_hidden_A()
             prev_archs_B, prev_hiddens_B = cycle_controller.get_topk_arch_hidden_B()
