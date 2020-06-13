@@ -96,13 +96,13 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
             if (total_iters + 1) % opt.save_latest_freq == 0:  # cache our latest model every <save_latest_freq> iterations
                 tqdm.write('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
                 save_suffix = 'latest'
-                cycle_gan.save_networks(train_steps)
+                # cycle_gan.save_networks(train_steps)
 
             iter_data_time = time.time()
 
         if (epoch + 1) % opt.save_epoch_freq == 0:
             cycle_gan.save_networks('latest')
-            cycle_gan.save_networks(train_steps)
+            # cycle_gan.save_networks(train_steps)
 
         tqdm.write('End of epoch %d / %d \t Time Taken: %d sec' % (
             epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))
@@ -125,7 +125,6 @@ def cyclgan_train(opt, cycle_gan: CycleGANModel,
         }, train_steps)
 
         writer_dict['train_steps'] += 1
-        cycle_gan.update_learning_rate()
 
     return dynamic_reset
 
@@ -186,7 +185,6 @@ def controller_train(opt, cycle_gan: CycleGANModel,
         }, controller_step)
 
         writer_dict['controller_steps'] = controller_step + 1
-        cycle_controller.update_learning_rate()
 
 MODEL_DIR = 'D:\\imagenet'
 
@@ -205,6 +203,7 @@ def main():
     delta_grow_steps = [int(opt.grow_step ** i) for i in range(1, opt.max_skip_num)] + \
                        [int(opt.grow_step ** 3) for _ in range(1, opt.n_resnet - opt.max_skip_num + 1)]
 
+    opt.max_search_iter = sum(delta_grow_steps)
     grow_steps = [sum(delta_grow_steps[:i]) for i in range(len(delta_grow_steps))][1:]
 
     grow_ctrler = GrowCtrler(opt.grow_step, steps=grow_steps)
@@ -250,7 +249,6 @@ def main():
     g_loss_history = RunningStats(opt.dynamic_reset_window)
     d_loss_history = RunningStats(opt.dynamic_reset_window)
 
-    opt.max_search_iter = sum(grow_steps)
     dynamic_reset = None
     for search_iter in tqdm(range(int(start_search_iter), int(opt.max_search_iter))):
         tqdm.write(f"<start search iteration {search_iter}>")
